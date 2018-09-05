@@ -1,0 +1,4 @@
+/Users/Li/Project/whitebox_v2/build/CMakeFiles/rebuild_cache.dir
+/Users/Li/Project/whitebox_v2/build/CMakeFiles/edit_cache.dir
+/Users/Li/Project/whitebox_v2/build/CMakeFiles/wbc2_MAIN.dir
+/Users/Li/Project/whitebox_v2/build/CMakeFiles/wbc2.dir
