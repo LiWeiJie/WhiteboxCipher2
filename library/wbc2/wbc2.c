@@ -90,8 +90,32 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, Feis
         case FeistalBox_AES_128_128:
         {
             //aes
-            // plaintext = (uint8_t *)malloc(sizeof)
-            return FEISTAL_BOX_NOT_IMPLEMENT;
+            uint64_t upper = ((long long)1<<(8*inputBytes));
+            int block_bytes = box->block_bytes;
+            box->box = malloc(outputBytes*upper);
+            uint8_t* box_table = box->box;
+
+            AES_KEY aes_key;
+            AES_set_encrypt_key(key, 128, &aes_key);
+
+            plaintext = (uint8_t *)calloc(block_bytes, sizeof(uint8_t));
+            if(!plaintext)
+                return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+            
+            uint8_t buffer[block_bytes];
+            uint32_t p = 0;
+
+            uint8_t * dst = box_table;
+            while(p<upper) {
+                uint32_t t = m_htole32(p);
+                *(uint32_t*) plaintext = t;
+                AES_encrypt(plaintext, buffer, &aes_key);
+                memcpy(dst, buffer, outputBytes);
+                dst += outputBytes;
+                ++p;
+            }
+            free(plaintext);
+            return dst-box_table;
             break;
         }
         case FeistalBox_SM4_128_128:
