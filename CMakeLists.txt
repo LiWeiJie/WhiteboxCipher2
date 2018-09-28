@@ -1,4 +1,14 @@
 
+if (CMAKE_HOST_WIN32)
+    set(WINDOWS 1)
+elseif(CMAKE_HOST_APPLE)
+    set(MACOS 1)
+    SET(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
+elseif(CMAKE_HOST_UNIX)
+    set(LINUX 1)
+endif()
+
+
 #1.cmake verson，指定cmake版本
 cmake_minimum_required(VERSION 3.2)
 
@@ -13,7 +23,6 @@ INCLUDE_DIRECTORIES(test)
 #4.source directory，源文件目录
 AUX_SOURCE_DIRECTORY(library LIB_SRCS)
 
-
 # wbc2
 AUX_SOURCE_DIRECTORY(library/wbc2 LIB_SRCS)
 
@@ -25,7 +34,6 @@ AUX_SOURCE_DIRECTORY(test TEST_EXEC)
 SET(BUILD_NAME ${PROJECT_NAME})
 # SET(BUILD_TEST_NAME ${PROJECT_NAME}_TEST)
 SET(TEST_EXEC_NAME ${PROJECT_NAME}_MAIN)
-
 
 SET(CXXFLAGS $ENV{CXXFLAGS})
 
