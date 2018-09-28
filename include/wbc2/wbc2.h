@@ -27,10 +27,11 @@ enum FeistalBoxAlgo {
 
 typedef struct FeistalBox {
     enum FeistalBoxAlgo algo;
-    int block_bytes ;
+    int blockBytes ;
     int inputBytes ;
     int outputBytes ;
-    uint8_t *box;
+    uint8_t *table;       // finally, box = 2^(8*inputBytes) * outputBytes
+    int tableSize;
 } FeistalBox;
 
 /**
@@ -53,7 +54,7 @@ int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box);
 int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, FeistalBox *box);
 int releaseFeistalBox(FeistalBox *box);
 
-int feistalRound(FeistalBox *box, uint8_t *plaintext, int rounds, uint8_t * ciphertext);
+int feistalRoundEnc(FeistalBox *box, const uint8_t *plaintext, int rounds, uint8_t * ciphertext);
 
 // ERROR CODE DEFINE
 #define FEISTAL_BOX_NOT_IMPLEMENT -1
