@@ -45,16 +45,17 @@ int releaseFeistalBox(FeistalBox *box)
     return 0;
 }
 
+// 0: all fine, otherwise error code
 int checkFeistalBox(FeistalBox *box)
 {
     // step 1. check algo
     if (box->algo<1 || box->algo > FEISTAL_ALGOS_NUM)
-        return 0;
+        return FEISTAL_BOX_INVALID_BOX;
     // step 2. check block bytes
     if (box->blockBytes != 16) {
-        return 0;
+        return FEISTAL_BOX_INVALID_BOX;
     }
-    return 1;
+    return 0;
 }
 
 
@@ -89,8 +90,9 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, Feis
     box->outputBytes = outputBytes;
     uint8_t *plaintext;
     enum FeistalBoxAlgo algo = box->algo;
-    if (!checkFeistalBox(box))
-        return FEISTAL_BOX_INVALID_BOX;
+    int ret = 0;
+    if (ret = checkFeistalBox(box))
+        return ret;
 
     switch (algo) {
         case FeistalBox_AES_128_128:
@@ -165,20 +167,29 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, Feis
             break;
         }
     }
-    return 0;
+    return ret;
 }
 
-int feistalRoundEnc(FeistalBox *box, const uint8_t *plaintext, int rounds, uint8_t * ciphertext)
+int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output)
 {
+    int ret = 0;
+    if (ret = checkFeistalBox(box))
+        return ret;
+    if (block_input==NULL || block_output==NULL)
+        return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
+    if (rounds<1)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
+    if (rounds>1000)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
     int i, j;
     int _bb = box->blockBytes;
     int _ib = box->inputBytes, _ob = box->outputBytes;
-    uint8_t* _table = box->table;
+    const uint8_t* _table = box->table;
     uint8_t * p1 = (uint8_t *)malloc(sizeof(_bb));
     uint8_t * p2 = (uint8_t *)malloc(sizeof(_bb));
     if (!p1 || !p2)
         return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
-    memcpy(p1, plaintext, _bb);
+    memcpy(p1, block_input, _bb);
     for (i=0; i < rounds; i++) 
     {
         unsigned long long int offset = 0;
@@ -196,6 +207,7 @@ int feistalRoundEnc(FeistalBox *box, const uint8_t *plaintext, int rounds, uint8
         p1 = p2;
         p2 = t;
    }
-    memcpy(ciphertext, p1, _bb);
-    return 0;
+    memcpy(block_output, p1, _bb);
+    return ret;
+}
 }

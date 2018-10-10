@@ -51,17 +51,33 @@ typedef struct FeistalBox {
 
 int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box);
 
+/**
+ * @brief inputBytes + outputBytes should be 16
+ * 
+ * @param key 
+ * @param inputBytes less than 4
+ * @param outputBytes 
+ * @param box 
+ * @return int 
+ */
 int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, FeistalBox *box);
 int releaseFeistalBox(FeistalBox *box);
 
-int feistalRoundEnc(FeistalBox *box, const uint8_t *plaintext, int rounds, uint8_t * ciphertext);
+int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output);
+
+int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output);
 
 // ERROR CODE DEFINE
-#define FEISTAL_BOX_NOT_IMPLEMENT -1
-#define FEISTAL_BOX_INVALID_ALGO -2
-#define FEISTAL_BOX_INVAILD_ARGUS -4
-#define FEISTAL_BOX_INVALID_BOX -5
-#define FEISTAL_BOX_MEMORY_NOT_ENOUGH -6
+#define FEISTAL_BOX_NOT_IMPLEMENT -101
+#define FEISTAL_BOX_INVALID_ALGO -102
+#define FEISTAL_BOX_INVAILD_ARGUS -104
+#define FEISTAL_BOX_INVALID_BOX -105
+#define FEISTAL_BOX_MEMORY_NOT_ENOUGH -106
+
+#define FEISTAL_ROUND_NULL_BLOCK_PTR -201
+#define FEISTAL_ROUND_NULL_ROUND_TOO_SMALL -202
+#define FEISTAL_ROUND_NULL_ROUND_TOO_BIG -203
+
 
 
 # ifdef  __cplusplus
