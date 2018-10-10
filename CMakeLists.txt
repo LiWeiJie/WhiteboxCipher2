@@ -63,16 +63,16 @@ if (False)
 endif()
 
 
-if (CMAKE_HOST_WIN32)
-    set(WINDOWS 1)
-elseif(CMAKE_HOST_APPLE)
-    set(MACOS 1)
-elseif(CMAKE_HOST_UNIX)
-    set(LINUX 1)
+if (WINDOWS)
+    set(PlatformsLib lib/win32)
+elseif(MACOS)
+    set(PlatformsLib lib/macOS)
+elseif(LINUX)
+    set(PlatformsLib lib/linux)
 endif()
 
 # set AisinoSSL lib
-FIND_LIBRARY(AISINOSSL_LIB AisinoSSL lib NO_DEFAULT_PATH)
+FIND_LIBRARY(AISINOSSL_LIB AisinoSSL ${PlatformsLib} NO_DEFAULT_PATH)
 message(${AISINOSSL_LIB})
 
 ADD_LIBRARY(${BUILD_NAME} SHARED ${LIB_SRCS})
