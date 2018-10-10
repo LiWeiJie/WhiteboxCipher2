@@ -47,7 +47,7 @@ extern "C" {
 
 // SET ANDROID SENSOR
 // NOTE: https://developer.android.com/ndk/reference/group/sensor
-#define ENABLE_SEED_ANDROID_SENSOR
+//#define ENABLE_SEED_ANDROID_SENSOR
 #define SEED_DEFAULT_SENSOR ASENSOR_TYPE_MAGNETIC_FIELD
 
 // For Android test

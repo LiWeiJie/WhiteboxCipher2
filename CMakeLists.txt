@@ -1,13 +1,24 @@
 
+option(TARGET "target platform" OFF)
+
 if (CMAKE_HOST_WIN32)
     set(WINDOWS 1)
+    set(build_os WINDOWS)
 elseif(CMAKE_HOST_APPLE)
     set(MACOS 1)
+    set(build_os macOS)
     SET(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
 elseif(CMAKE_HOST_UNIX)
     set(LINUX 1)
+    set(build_os linux)
 endif()
 
+IF(TARGET)
+    message("\nBuild: ${TARGET}")
+ELSE()
+    SET(TARGET ${build_os})
+    message("\nBuild: ${TARGET}")
+ENDIF()
 
 #1.cmake verson，指定cmake版本
 cmake_minimum_required(VERSION 3.2)

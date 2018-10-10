@@ -12,7 +12,7 @@
 #define DUMMY_ROUND_ENABLE 0
 /* #undef DEBUG */
 /* #undef iOS_M4RI */
-#define macOS_M4RI
+/* #undef macOS_M4RI */
 /* #undef ANDROID_M4RI */
 
 /* #undef ANDROID_VER */
