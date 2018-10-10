@@ -9,8 +9,12 @@
 #include <assert.h>
 // #include <machine/endian.h>
 
-#include <wbc2/wbc2.h>
+#include "wbc2/wbc2.h"
 #include <AisinoSSL/sm4/sm4.h>
+
+#ifdef WIN32
+#include <winsock.h>
+#endif
 
 static void dump(const uint8_t * li, int len) {
     int line_ctrl = 16;
@@ -70,8 +74,6 @@ int checkFeistalBox(const FeistalBox *box)
     return 0;
 }
 
-
-
 uint32_t swap32(uint32_t num) 
 {
     return ((num>>24)&0xff) | // move byte 3 to byte 0
@@ -84,25 +86,32 @@ uint32_t swap32(uint32_t num)
 
 
 //return sizeof box
-int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, FeistalBox *box)
+int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBox *box)
 {
+    int ret = 0;
+    if (rounds<1)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
+    if (rounds>FEISTA_MAX_ROUNDS)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
+
     assert(inputBytes <= 4);
     if (inputBytes > 4)
-        return FEISTAL_BOX_NOT_IMPLEMENT;
-    box->inputBytes = inputBytes;
+        return ret = FEISTAL_BOX_NOT_IMPLEMENT;
 
     assert(outputBytes <= box->blockBytes);
     if (outputBytes > box->blockBytes)
-        return  FEISTAL_BOX_INVAILD_ARGUS;
+        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
 
     assert(inputBytes+outputBytes == box->blockBytes);
     if (inputBytes+outputBytes != box->blockBytes)
-        return  FEISTAL_BOX_INVAILD_ARGUS;
+        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
     
+    box->inputBytes = inputBytes;
+    box->rounds = rounds;
     box->outputBytes = outputBytes;
     uint8_t *plaintext;
     enum FeistalBoxAlgo algo = box->algo;
-    int ret = 0;
+
     if ((ret = checkFeistalBox(box)))
         return ret;
 
@@ -182,17 +191,14 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, Feis
     return ret;
 }
 
-int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output)
+int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
     int ret = 0;
     if ((ret = checkFeistalBox(box)))
         return ret;
     if (block_input==NULL || block_output==NULL)
         return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
-    if (rounds<1)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
-    if (rounds>FEISTA_MAX_ROUNDS)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
+    int _rounds = box->rounds;
     int i, j;
     int _bb = box->blockBytes;
     int _ib = box->inputBytes, _ob = box->outputBytes;
@@ -202,7 +208,7 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int round
     if (!p1 || !p2)
         return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
     memcpy(p1, block_input, _bb);
-    for (i=0; i < rounds; i++) 
+    for (i=0; i < _rounds; i++) 
     {
         unsigned long long int offset = 0;
         for (j=0; j<_ib; j++)
@@ -224,17 +230,14 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int round
 }
 
 
-int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output)
+int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
     int ret = 0;
     if ((ret = checkFeistalBox(box)))
         return ret;
     if (block_input==NULL || block_output==NULL)
         return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
-    if (rounds<1)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
-    if (rounds>FEISTA_MAX_ROUNDS)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
+    int _rounds = box->rounds;
     int i, j;
     int _bb = box->blockBytes;
     int _ib = box->inputBytes, _ob = box->outputBytes;
@@ -244,7 +247,7 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int round
     if (!p1 || !p2)
         return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
     memcpy(p1, block_input, _bb);
-    for (i=0; i < rounds; i++) 
+    for (i=0; i < _rounds; i++) 
     {
         uint8_t *t;
         //ror

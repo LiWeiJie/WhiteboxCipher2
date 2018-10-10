@@ -29,6 +29,7 @@ enum FeistalBoxAlgo {
 
 typedef struct FeistalBox {
     enum FeistalBoxAlgo algo;
+    int rounds;
     int blockBytes ;
     int inputBytes ;
     int outputBytes ;
@@ -62,12 +63,12 @@ int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box);
  * @param box 
  * @return int 
  */
-int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, FeistalBox *box);
+int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBox *box);
 int releaseFeistalBox(FeistalBox *box);
 
-int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output);
+int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output);
 
-int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output);
+int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output);
 
 // ERROR CODE DEFINE
 #define FEISTAL_BOX_NOT_IMPLEMENT -101
@@ -79,8 +80,6 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int round
 #define FEISTAL_ROUND_NULL_BLOCK_PTR -201
 #define FEISTAL_ROUND_NULL_ROUND_TOO_SMALL -202
 #define FEISTAL_ROUND_NULL_ROUND_TOO_BIG -203
-
-
 
 # ifdef  __cplusplus
 }

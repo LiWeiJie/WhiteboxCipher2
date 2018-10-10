@@ -20,7 +20,7 @@ int wbc2_example()
     // const uint8_t key[16] = { 0 };
     FeistalBox fb;
     initFeistalBox(FeistalBox_SM4_128_128, &fb);
-    int len = generateFeistalBox(key, 1, 15, &fb);
+    int len = generateFeistalBox(key, 1, 15, FEISTAL_ROUNDS, &fb);
     printf("%d\n", len);
     // dump(fb.table, len);
     const uint8_t ip[16] = { 0x01,0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
@@ -28,9 +28,9 @@ int wbc2_example()
     buf = (uint8_t*) malloc(16);
     op = (uint8_t*) malloc(16);
     dump(ip, 16);
-    feistalRoundEnc(&fb, ip, FEISTAL_ROUNDS, op);
+    feistalRoundEnc(&fb, ip, op);
     dump(op, 16);
-    feistalRoundDec(&fb, op, FEISTAL_ROUNDS, buf);
+    feistalRoundDec(&fb, op, buf);
     dump(buf, 16);
     releaseFeistalBox(&fb);
     return 0;
