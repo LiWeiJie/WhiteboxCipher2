@@ -35,6 +35,7 @@ typedef struct FeistalBox {
     int outputBytes ;
     uint8_t *table;       // finally, box = 2^(8*inputBytes) * outputBytes
     int tableSize;
+    uint8_t (*p)[16][256]; //permutation layer, size: rounds * 512B
 } FeistalBox;
 
 /**

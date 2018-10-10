@@ -12,6 +12,9 @@
 #include "wbc2/wbc2.h"
 #include <AisinoSSL/sm4/sm4.h>
 
+#include <AisinoSSL/math/affine_transform.h>
+// #include <AisinoSSL/internal/aisinossl_random.h>
+
 #ifdef WIN32
 #include <winsock.h>
 #endif
@@ -100,8 +103,65 @@ uint32_t swap32(uint32_t num)
 
 #define m_htole32(p) swap32(htons(p))
 
+struct PermutationHelper
+{
+    uint8_t (*alpha)[16][256];
+    uint8_t (*alpha_inv)[16][256];
+    uint8_t (*beta)[16][256];
+    uint8_t (*beta_inv)[16][256];
+    uint8_t encode[16][256];
+    uint8_t encode_inv[16][256];
+    uint8_t decode[16][256];
+    uint8_t decode_inv[16][256];
+};
 
-//return sizeof box
+
+#define RANDOM_AFFINE_MAT(x, xi, d)   GenRandomAffineTransform(x, xi, d)
+
+int initPermutationHelper(int rounds, struct PermutationHelper *ph)
+{
+    int ret = 0;
+    ph->alpha = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    ph->alpha_inv = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    if (ph->alpha==NULL || ph->alpha_inv==NULL)
+        return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+    ph->beta = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    ph->beta_inv = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    if (ph->beta==NULL || ph->beta_inv==NULL)
+        return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+
+    MatGf2 tmg = NULL; //temp MatGf2
+    MatGf2 tmg_inv = NULL;
+    AffineTransform tat; //temp AffineTransform
+    AffineTransform tat_inv;
+    RANDOM_AFFINE_MAT(&tat, &tat_inv, 8);
+    int i,j;
+    for (i=0; i<16; i++)
+    {
+        for (j=0; j<256; j++) 
+        {
+            //TODO: add left mul and right mul for affinetransform
+            // ph->encode[i][j] = 
+        }
+    }
+
+    
+    return ret;
+}
+
+int addPermutationLayer(int rounds, FeistalBox *box)
+{
+    int ret = 0;
+    struct PermutationHelper ph;
+    if ((ret = initPermutationHelper(rounds, &ph)))
+        return ret;
+    
+    
+    return ret;
+}
+
+
+//
 int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBox *box)
 {
     int ret = 0;
@@ -113,6 +173,7 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int 
     if ((ret = checkFeistalBox(box)))
         return ret;
 
+    // 1. generate T box
     uint8_t *plaintext;
     enum FeistalBoxAlgo algo = box->algo;
 
@@ -131,7 +192,7 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int 
 
             plaintext = (uint8_t *)calloc(blockBytes, sizeof(uint8_t));
             if(!plaintext)
-                return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+                return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
             
             uint8_t buffer[blockBytes];
             uint32_t p = 0;
@@ -146,7 +207,6 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int 
                 ++p;
             }
             free(plaintext);
-            return dst-box_table;
             break;
         }
         case FeistalBox_SM4_128_128:
@@ -164,7 +224,7 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int 
             // step 2. calloc memory
             plaintext = (uint8_t *)calloc(blockBytes,sizeof(uint8_t));
             if (!plaintext)
-                return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+                return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
 
             uint8_t buffer[blockBytes];
             uint32_t p = 0;
@@ -180,15 +240,18 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int 
                 ++p;
             }
             free(plaintext);   
-            return dst-box_table; 
             break;
         }
         default:
         {
-            return FEISTAL_BOX_NOT_IMPLEMENT;
+            return ret = FEISTAL_BOX_NOT_IMPLEMENT;
             break;
         }
     }
+
+    // 2. add permutation layer
+    ret = addPermutationLayer(rounds, box);
+
     return ret;
 }
 
