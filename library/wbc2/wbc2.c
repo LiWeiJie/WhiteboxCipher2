@@ -64,14 +64,30 @@ int releaseFeistalBox(FeistalBox *box)
 // 0: all fine, otherwise error code
 int checkFeistalBox(const FeistalBox *box)
 {
+    int ret = 0;
     // step 1. check algo
     if (box->algo<1 || box->algo > FEISTAL_ALGOS_NUM)
-        return FEISTAL_BOX_INVALID_BOX;
+        return ret = FEISTAL_BOX_INVALID_ALGO;
     // step 2. check block bytes
     if (box->blockBytes != 16) {
-        return FEISTAL_BOX_INVALID_BOX;
+        return ret = FEISTAL_BOX_INVALID_BOX;
     }
-    return 0;
+
+    if (box->inputBytes > 4)
+        return ret = FEISTAL_BOX_INVAILD_ARGUS;
+
+    if (box->outputBytes > box->blockBytes)
+        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
+
+    if (box->inputBytes+box->outputBytes != box->blockBytes)
+        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
+
+    if (box->rounds<1)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
+    if (box->rounds>FEISTA_MAX_ROUNDS)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
+
+    return ret;
 }
 
 uint32_t swap32(uint32_t num) 
@@ -89,31 +105,16 @@ uint32_t swap32(uint32_t num)
 int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBox *box)
 {
     int ret = 0;
-    if (rounds<1)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
-    if (rounds>FEISTA_MAX_ROUNDS)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
-
-    assert(inputBytes <= 4);
-    if (inputBytes > 4)
-        return ret = FEISTAL_BOX_NOT_IMPLEMENT;
-
-    assert(outputBytes <= box->blockBytes);
-    if (outputBytes > box->blockBytes)
-        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
-
-    assert(inputBytes+outputBytes == box->blockBytes);
-    if (inputBytes+outputBytes != box->blockBytes)
-        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
-    
+        
     box->inputBytes = inputBytes;
     box->rounds = rounds;
     box->outputBytes = outputBytes;
-    uint8_t *plaintext;
-    enum FeistalBoxAlgo algo = box->algo;
 
     if ((ret = checkFeistalBox(box)))
         return ret;
+
+    uint8_t *plaintext;
+    enum FeistalBoxAlgo algo = box->algo;
 
     switch (algo) {
         case FeistalBox_AES_128_128:
