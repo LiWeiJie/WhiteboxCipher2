@@ -30,7 +30,6 @@ PROJECT(wbc2)
 INCLUDE_DIRECTORIES(include)
 INCLUDE_DIRECTORIES(test)
 
-
 #4.source directory，源文件目录
 AUX_SOURCE_DIRECTORY(library LIB_SRCS)
 
@@ -57,14 +56,12 @@ SET(CMAKE_BUILD_TYPE "Debug")
 SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
-
 # SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -Os -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.3.sdk -F/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.3.sdk/System/Library/Frameworks -arch arm64 -arch armv7 -miphoneos-version-min=8.0 -flto")
 
 
 # set(macOS_M4RI ON)
 # set(ANDROID_M4RI ON)
 # 
-
 
 #6.add executable file，添加要编译的可执行文件
 if (False) 
@@ -74,11 +71,13 @@ if (False)
 endif()
 
 
-if (WINDOWS)
+if (${TARGET} STREQUAL win32)
     set(PlatformsLib lib/win32)
-elseif(MACOS)
+elseif(${TARGET} STREQUAL macOS)
     set(PlatformsLib lib/macOS)
-elseif(LINUX)
+elseif(${TARGET} STREQUAL linux)
+    set(PlatformsLib lib/linux)
+elseif(${TARGET} STREQUAL android)
     set(PlatformsLib lib/linux)
 endif()
 

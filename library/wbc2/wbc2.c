@@ -269,30 +269,17 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t *
         for (j=0; j<_ib; j++)
         {
             offset = (offset<<8) + p1[j];
-            p2[_bb-_ib+j] = p1[j];
+            p2[j] = p1[j];
         }
         const uint8_t * rk = _table + (offset * _ob);
         for (; j<_bb; j++)
         {
-            p2[j-_ib] = rk[j-_ib] ^ p1[j];
+            p2[j] = rk[j-_ib] ^ p1[j];
         }
         t = p1;
         p1 = p2;
         p2 = t;
 
-        //ror
-        for (j=0; j<_ib; ++j)
-        {
-            p2[j]=p1[_bb-_ib+j];
-        }
-        for (j=_ib; j<_bb; ++j)
-        {
-            p2[j]=p1[j-_ib];
-        }
-        //swap
-        t = p1;
-        p1 = p2;
-        p2 = t;
    }
     memcpy(block_output, p1, _bb);
     return ret;
