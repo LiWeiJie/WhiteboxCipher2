@@ -12,6 +12,18 @@
 #include <wbc2/wbc2.h>
 #include <AisinoSSL/sm4/sm4.h>
 
+static void dump(const uint8_t * li, int len) {
+    int line_ctrl = 16;
+    for (int i=0; i<len; i++) {
+        printf("%02X", (*li++));
+        if ((i+1)%line_ctrl==0) {
+            printf("\n");
+        } else {
+            printf(" ");
+        }
+    }
+}
+
 int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box) 
 {
     switch (algo) {
@@ -201,7 +213,7 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int round
         const uint8_t * rk = _table + (offset * _ob);
         for (; j<_bb; j++)
         {
-            p2[j] = rk[j-_ib] ^ p1[j];
+            p2[j-_ib] = rk[j-_ib] ^ p1[j];
         }
         uint8_t *t = p1;
         p1 = p2;
@@ -258,7 +270,7 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int round
         const uint8_t * rk = _table + (offset * _ob);
         for (; j<_bb; j++)
         {
-            p2[j] = rk[j-_ib] ^ p1[j];
+            p2[j-_ib] = rk[j-_ib] ^ p1[j];
         }
         t = p1;
         p1 = p2;
