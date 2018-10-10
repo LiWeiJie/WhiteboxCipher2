@@ -18,6 +18,8 @@ extern "C" {
 # endif
 
 #define FEISTAL_ROUNDS 300
+#define FEISTA_MAX_ROUNDS 10000
+
 
 #define FEISTAL_ALGOS_NUM 2
 enum FeistalBoxAlgo {

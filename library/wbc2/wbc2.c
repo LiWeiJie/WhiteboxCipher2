@@ -46,7 +46,7 @@ int releaseFeistalBox(FeistalBox *box)
 }
 
 // 0: all fine, otherwise error code
-int checkFeistalBox(FeistalBox *box)
+int checkFeistalBox(const FeistalBox *box)
 {
     // step 1. check algo
     if (box->algo<1 || box->algo > FEISTAL_ALGOS_NUM)
@@ -91,7 +91,7 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, Feis
     uint8_t *plaintext;
     enum FeistalBoxAlgo algo = box->algo;
     int ret = 0;
-    if (ret = checkFeistalBox(box))
+    if ((ret = checkFeistalBox(box)))
         return ret;
 
     switch (algo) {
@@ -173,13 +173,13 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, Feis
 int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output)
 {
     int ret = 0;
-    if (ret = checkFeistalBox(box))
+    if ((ret = checkFeistalBox(box)))
         return ret;
     if (block_input==NULL || block_output==NULL)
         return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
     if (rounds<1)
         return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
-    if (rounds>1000)
+    if (rounds>FEISTA_MAX_ROUNDS)
         return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
     int i, j;
     int _bb = box->blockBytes;
@@ -198,7 +198,7 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int round
             offset = (offset<<8) + p1[j];
             p2[_bb-_ib+j] = p1[j];
         }
-        uint8_t * rk = _table + (offset * _ob);
+        const uint8_t * rk = _table + (offset * _ob);
         for (; j<_bb; j++)
         {
             p2[j] = rk[j-_ib] ^ p1[j];
@@ -210,4 +210,74 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, int round
     memcpy(block_output, p1, _bb);
     return ret;
 }
+
+
+int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, int rounds, uint8_t * block_output)
+{
+    int ret = 0;
+    if ((ret = checkFeistalBox(box)))
+        return ret;
+    if (block_input==NULL || block_output==NULL)
+        return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
+    if (rounds<1)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
+    if (rounds>FEISTA_MAX_ROUNDS)
+        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
+    int i, j;
+    int _bb = box->blockBytes;
+    int _ib = box->inputBytes, _ob = box->outputBytes;
+    const uint8_t* _table = box->table;
+    uint8_t * p1 = (uint8_t *)malloc(sizeof(_bb));
+    uint8_t * p2 = (uint8_t *)malloc(sizeof(_bb));
+    if (!p1 || !p2)
+        return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+    memcpy(p1, block_input, _bb);
+    for (i=0; i < rounds; i++) 
+    {
+        uint8_t *t;
+        //ror
+        for (j=0; j<_ib; ++j)
+        {
+            p2[j]=p1[_bb-_ib+j];
+        }
+        for (j=_ib; j<_bb; ++j)
+        {
+            p2[j]=p1[j-_ib];
+        }
+        //swap
+        t = p1;
+        p1 = p2;
+        p2 = t;
+        
+        unsigned long long int offset = 0;
+        for (j=0; j<_ib; j++)
+        {
+            offset = (offset<<8) + p1[j];
+            p2[_bb-_ib+j] = p1[j];
+        }
+        const uint8_t * rk = _table + (offset * _ob);
+        for (; j<_bb; j++)
+        {
+            p2[j] = rk[j-_ib] ^ p1[j];
+        }
+        t = p1;
+        p1 = p2;
+        p2 = t;
+
+        //ror
+        for (j=0; j<_ib; ++j)
+        {
+            p2[j]=p1[_bb-_ib+j];
+        }
+        for (j=_ib; j<_bb; ++j)
+        {
+            p2[j]=p1[j-_ib];
+        }
+        //swap
+        t = p1;
+        p1 = p2;
+        p2 = t;
+   }
+    memcpy(block_output, p1, _bb);
+    return ret;
 }
