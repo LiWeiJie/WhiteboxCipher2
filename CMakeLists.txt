@@ -1,5 +1,8 @@
 
-option(TARGET "target platform" OFF)
+#1.cmake verson，指定cmake版本
+cmake_minimum_required(VERSION 3.2)
+
+option(BUILD_TARGET "target platform" OFF)
 
 if (CMAKE_HOST_WIN32)
     set(WINDOWS 1)
@@ -13,15 +16,45 @@ elseif(CMAKE_HOST_UNIX)
     set(build_os linux)
 endif()
 
-IF(TARGET)
-    message("\nBuild: ${TARGET}")
+IF(BUILD_TARGET)
+    message("\nBuild: ${BUILD_TARGET}")
 ELSE()
-    SET(TARGET ${build_os})
-    message("\nBuild: ${TARGET}")
+    SET(BUILD_TARGET ${build_os})
+    message("\nBuild: ${BUILD_TARGET}")
 ENDIF()
 
-#1.cmake verson，指定cmake版本
-cmake_minimum_required(VERSION 3.2)
+
+IF(BUILD_TARGET STREQUAL macOS)
+    add_definitions(-D__macOS__)
+ENDIF()
+
+IF(BUILD_TARGET STREQUAL win32)
+    add_definitions(-D_WIN32)
+ENDIF()
+
+IF(BUILD_TARGET STREQUAL iOS)
+    add_definitions(-D__iOS__)
+
+    SET(CMD "xcrun -sdk iphoneos --show-sdk-path")
+    EXEC_PROGRAM(${CMD} OUTPUT_VARIABLE iOS_SDK_PATH)
+    SET(CMD "xcrun -sdk iphoneos --find clang")
+    EXEC_PROGRAM(${CMD} OUTPUT_VARIABLE CLANG_PATH)
+    set(CMAKE_C_COMPILER ${CLANG_PATH})
+    #-F${iOS_SDK_PATH}/System/Library/Frameworks
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -isysroot ${iOS_SDK_PATH} -Wunused-command-line-argument -arch arm64 -arch armv7 -miphoneos-version-min=8.0 -fembed-bitcode")
+    message("CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+    message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
+ENDIF()
+
+IF(BUILD_TARGET STREQUAL Android)
+    add_definitions(-D__ANDROID__)
+
+    message(FATAL_ERROR
+    "Finished to generate <ml_config.h>! \n"
+    "If you want to compile, please run 'ndk-build NDK_PROJECT_PATH=./ NDK_APPLICATION_MK=./Application.mk'."
+    )
+ENDIF()
+
 
 #2.project name，指定项目的名称，一般和项目的文件夹名称对应
 PROJECT(wbc2)
@@ -71,24 +104,24 @@ if (False)
 endif()
 
 
-if (${TARGET} STREQUAL win32)
+if (${BUILD_TARGET} STREQUAL win32)
     set(PlatformsLib lib/win32)
-elseif(${TARGET} STREQUAL macOS)
+elseif(${BUILD_TARGET} STREQUAL macOS)
     set(PlatformsLib lib/macOS)
-elseif(${TARGET} STREQUAL linux)
+elseif(${BUILD_TARGET} STREQUAL linux)
     set(PlatformsLib lib/linux)
-elseif(${TARGET} STREQUAL android)
+elseif(${BUILD_TARGET} STREQUAL android)
     set(PlatformsLib lib/android)
 endif()
 
 # set AisinoSSL lib
 FIND_LIBRARY(AISINOSSL_LIB AisinoSSL ${PlatformsLib} NO_DEFAULT_PATH)
-FIND_LIBRARY(SM4_LIB AisinoSSL_SM4WB ${PlatformsLib} NO_DEFAULT_PATH)
+FIND_LIBRARY(Matrix_LIB MatrixLib ${PlatformsLib} NO_DEFAULT_PATH)
 message(${AISINOSSL_LIB})
-message(${SM4_LIB})
+message(${Matrix_LIB})
 
 ADD_LIBRARY(${BUILD_NAME} SHARED ${LIB_SRCS})
-TARGET_LINK_LIBRARIES(${BUILD_NAME} ${AISINOSSL_LIB} ${SM4_LIB} )
+TARGET_LINK_LIBRARIES(${BUILD_NAME} ${AISINOSSL_LIB} ${Matrix_LIB} )
 
 ADD_EXECUTABLE(${TEST_EXEC_NAME} ${TEST_EXEC}  )
 TARGET_LINK_LIBRARIES(${TEST_EXEC_NAME}  ${BUILD_NAME})
