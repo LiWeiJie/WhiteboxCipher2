@@ -24,11 +24,19 @@ int ApplyAffineTransform(const AffineTransform at, const MatGf2 mat, MatGf2* dst
 // right mul mat * at.linear_map
 int ApplyAffineTransformRight(const MatGf2 mat, const AffineTransform at, MatGf2* dst);
 
+//  affine.linear * u32 + affine.vector
 uint32_t ApplyAffineToU32(const AffineTransform aff, uint32_t x);
-
 uint16_t ApplyAffineToU16(const AffineTransform aff, uint16_t data);
-
 uint8_t ApplyAffineToU8(const AffineTransform aff, uint8_t data);
+
+#define AffineMulU8(a, b) ApplyAffineToU8(a, b)
+#define AffineMulU16(a, b) ApplyAffineToU16(a, b)
+#define AffineMulU32(a, b) ApplyAffineToU32(a, b)
+
+//  u8 * affine.linear + affine.vector
+uint8_t U8MulAffine(uint8_t data, const AffineTransform aff);
+uint16_t U16MulAffine(uint16_t data, const AffineTransform aff);
+uint32_t U32MulAffine(uint32_t data, const AffineTransform aff);
 
 int AffineTransformFree(AffineTransform *aff);
 
