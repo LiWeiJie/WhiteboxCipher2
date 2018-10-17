@@ -4,17 +4,6 @@
 #define VECTOR_SIZE 16
 #define BLOCK_SIZE 16
 
-void dump(const uint8_t * li, int len) {
-    int line_ctrl = 16;
-    for (int i=0; i<len; i++) {
-        printf("%02X", (*li++));
-        if ((i+1)%line_ctrl==0) {
-            printf("\n");
-        } else {
-            printf(" ");
-        }
-    }
-}
 
 void gen_one_time_userkey(unsigned char* key,size_t key_size){
     aisinossl_random_context ctx;
@@ -38,8 +27,6 @@ void CRYPTO_wcbc128_encrypt(const unsigned char* in, unsigned char* out,
     void* key;
 
     gen_one_time_userkey(user_key, KEY_SIZE);
-    printf("encrypt user key:\n");
-    dump(user_key, KEY_SIZE);
     memcpy(iv, ivec, VECTOR_SIZE);
     for(i = 0; i < VECTOR_SIZE; i++)
         iv[i] ^= user_key[i];
@@ -71,8 +58,6 @@ void CRYPTO_wcbc128_decrypt(const unsigned char* in, unsigned char* out,
     (*whiteBox) (block_iv, user_key, table);
     for(i = 0; i < VECTOR_SIZE; i++)
         user_key[i] ^= ivec[i];
-    printf("decrypt user key:\n");
-    dump(user_key, KEY_SIZE);
     in += BLOCK_SIZE;
 
     key = malloc(type_size);
