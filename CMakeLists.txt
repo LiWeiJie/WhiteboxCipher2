@@ -7,6 +7,7 @@ option(BUILD_TARGET "target platform" OFF)
 if (CMAKE_HOST_WIN32)
     set(WINDOWS 1)
     set(build_os WINDOWS)
+
 elseif(CMAKE_HOST_APPLE)
     set(MACOS 1)
     set(build_os macOS)
@@ -69,6 +70,9 @@ AUX_SOURCE_DIRECTORY(library LIB_SRCS)
 # wbc2
 AUX_SOURCE_DIRECTORY(library/wbc2 LIB_SRCS)
 
+# feistalBox 
+AUX_SOURCE_DIRECTORY(library/feistalBox LIB_SRCS)
+
 # TEST 
 AUX_SOURCE_DIRECTORY(. TEST_EXEC)
 AUX_SOURCE_DIRECTORY(test TEST_EXEC)
@@ -119,9 +123,16 @@ FIND_LIBRARY(AISINOSSL_LIB AisinoSSL ${PlatformsLib} NO_DEFAULT_PATH)
 FIND_LIBRARY(Matrix_LIB MatrixLib ${PlatformsLib} NO_DEFAULT_PATH)
 message(${AISINOSSL_LIB})
 message(${Matrix_LIB})
+if (${BUILD_TARGET} STREQUAL win32)
+    FIND_LIBRARY(WS_LIB ws2_32 ${PlatformsLib})
+    message(${WS_LIB})
+endif()
 
 ADD_LIBRARY(${BUILD_NAME} SHARED ${LIB_SRCS})
 TARGET_LINK_LIBRARIES(${BUILD_NAME} ${AISINOSSL_LIB} ${Matrix_LIB} )
+if (${BUILD_TARGET} STREQUAL win32)
+    TARGET_LINK_LIBRARIES(${BUILD_NAME} ${WS_LIB} )
+endif()
 
 ADD_EXECUTABLE(${TEST_EXEC_NAME} ${TEST_EXEC}  )
 TARGET_LINK_LIBRARIES(${TEST_EXEC_NAME}  ${BUILD_NAME})
