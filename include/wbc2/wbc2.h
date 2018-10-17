@@ -36,6 +36,8 @@ typedef struct FeistalBox {
     uint8_t *table;       // finally, box = 2^(8*inputBytes) * outputBytes
     int tableSize;
     uint8_t (*p)[16][256]; //permutation layer, size: rounds * 512B
+    int enc_mode; //0 for enc, 1 for dec
+    int affine_on;
     uint8_t encode[16][256];
     uint8_t decode[16][256];
 } FeistalBox;
@@ -56,6 +58,7 @@ typedef struct FeistalBox {
 
 
 int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box);
+int initFeistalBoxNoAffine(enum FeistalBoxAlgo algo, FeistalBox *box);
 
 /**
  * @brief inputBytes + outputBytes should be 16

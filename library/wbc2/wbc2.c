@@ -31,8 +31,11 @@ static void dump(const uint8_t * li, int len) {
     }
 }
 
-int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box) 
+
+
+int _initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box, int affine_on) 
 {
+    box->affine_on = affine_on;
     switch (algo) {
         case FeistalBox_AES_128_128:
             box->algo = algo;
@@ -40,6 +43,7 @@ int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box)
             box->inputBytes = 0;
             box->outputBytes = 0;
             box->table = 0;
+            box->p = 0;
             break;
         case FeistalBox_SM4_128_128:
             box->algo = algo;
@@ -47,6 +51,7 @@ int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box)
             box->inputBytes = 0;
             box->outputBytes = 0;
             box->table = 0;
+            box->p = 0;
             break;
         default:
             return FEISTAL_BOX_INVALID_ALGO;
@@ -54,6 +59,18 @@ int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box)
     }
     return 0;
 }
+
+int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box)
+{
+    return _initFeistalBox(algo, box, 1);
+}
+
+int initFeistalBoxNoAffine(enum FeistalBoxAlgo algo, FeistalBox *box)
+{
+    return _initFeistalBox(algo, box, 0);
+}
+
+
 
 int releaseFeistalBox(FeistalBox *box)
 {
@@ -176,6 +193,15 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
     return ret;
 }
 
+int releasePermutationHelper(int rounds, struct PermutationHelper *ph)
+{
+    free(ph->alpha);
+    free(ph->alpha_inv);
+    free(ph->alpha_inv2);
+    ph->alpha = ph->alpha_inv = ph->alpha_inv2 = NULL;
+    return 0;
+}
+
 int addPermutationLayer(int rounds, FeistalBox *box)
 {
     int ret = 0;
@@ -263,6 +289,8 @@ int addPermutationLayer(int rounds, FeistalBox *box)
         
     free(otable);
     otable = NULL;
+
+    ret = releasePermutationHelper(rounds, &ph);
     return ret;
 }
 
@@ -355,13 +383,15 @@ int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int 
         }
     }
 
-    // 2. add permutation layer
-    ret = addPermutationLayer(rounds, box);
-
+    if (box->affine_on) {
+        // 2. add permutation layer
+        ret = addPermutationLayer(rounds, box);
+    }
+   
     return ret;
 }
 
-int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
+int feistalRoundEncNoAffine(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
     int ret = 0;
     if ((ret = checkFeistalBox(box)))
@@ -400,7 +430,7 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t *
 }
 
 
-int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
+int feistalRoundDecNoAffine(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
     int ret = 0;
     if ((ret = checkFeistalBox(box)))
@@ -452,4 +482,130 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t *
    }
     memcpy(block_output, p1, _bb);
     return ret;
+}
+
+
+int feistalRoundEncWithAffine(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
+{
+    int ret = 0;
+    if ((ret = checkFeistalBox(box)))
+        return ret;
+    if (block_input==NULL || block_output==NULL)
+        return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
+    int _rounds = box->rounds;
+    int i, j;
+    int _bb = box->blockBytes;
+    int _ib = box->inputBytes, _ob = box->outputBytes;
+    const uint8_t* _table = box->table;
+    const uint64_t upper = ((long long)1<<(8*_ib));
+    uint8_t * p1 = (uint8_t *)malloc(sizeof(_bb));
+    uint8_t * p2 = (uint8_t *)malloc(sizeof(_bb));
+    if (!p1 || !p2)
+        return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+    for (i=0; i<_bb; i++)
+    {
+        p1[i] = box->encode[i][block_input[i]];
+    }
+    // memcpy(p1, block_input, _bb);
+    for (i=0; i < _rounds; i++) 
+    {
+        unsigned long long int offset = 0;
+        for (j=0; j<_ib; j++)
+        {
+            offset = (offset<<8) + p1[j];
+            p2[_bb-_ib+j] = p1[j];
+        }
+        const uint8_t * rk = _table + (offset * _ob);
+        for (; j<_bb; j++)
+        {
+            p2[j-_ib] = rk[j-_ib] ^ p1[j];
+        }
+
+        for (j=0; j<_bb; j++)
+        {
+            p1[j] = box->p[i][j][p2[j]];
+        }
+        _table +=  _ob * upper;
+        // uint8_t *t = p1;
+        // p1 = p2;
+        // p2 = t;
+   }
+    memcpy(block_output, p1, _bb);
+    for (i=0; i<_bb; i++)
+    {
+        block_output[i] = box->decode[i][p1[i]];
+    }
+    return ret;
+}
+
+int feistalRoundDecWithAffine(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
+{
+    int ret = 0;
+    if ((ret = checkFeistalBox(box)))
+        return ret;
+    if (block_input==NULL || block_output==NULL)
+        return ret = FEISTAL_ROUND_NULL_BLOCK_PTR;
+    int _rounds = box->rounds;
+    int i, j;
+    int _bb = box->blockBytes;
+    int _ib = box->inputBytes, _ob = box->outputBytes;
+    const uint8_t* _table = box->table;
+    uint8_t * p1 = (uint8_t *)malloc(sizeof(_bb));
+    uint8_t * p2 = (uint8_t *)malloc(sizeof(_bb));
+    if (!p1 || !p2)
+        return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+    memcpy(p1, block_input, _bb);
+    for (i=0; i < _rounds; i++) 
+    {
+        uint8_t *t;
+        //ror
+        for (j=0; j<_ib; ++j)
+        {
+            p2[j]=p1[_bb-_ib+j];
+        }
+        for (j=_ib; j<_bb; ++j)
+        {
+            p2[j]=p1[j-_ib];
+        }
+        //swap
+        t = p1;
+        p1 = p2;
+        p2 = t;
+        
+        unsigned long long int offset = 0;
+        for (j=0; j<_ib; j++)
+        {
+            offset = (offset<<8) + p1[j];
+            p2[j] = p1[j];
+        }
+        const uint8_t * rk = _table + (offset * _ob);
+        for (; j<_bb; j++)
+        {
+            p2[j] = rk[j-_ib] ^ p1[j];
+        }
+        t = p1;
+        p1 = p2;
+        p2 = t;
+
+   }
+    memcpy(block_output, p1, _bb);
+    return ret;
+}
+
+int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
+{
+    if (box->affine_on) {
+        return feistalRoundEncWithAffine(box, block_input, block_output);
+    } else {
+        return feistalRoundEncNoAffine(box, block_input, block_output);
+    }
+}
+
+int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
+{
+    if (box->affine_on) {
+        return feistalRoundDecWithAffine(box, block_input, block_output);
+    } else {
+        return feistalRoundDecNoAffine(box, block_input, block_output);
+    }
 }
