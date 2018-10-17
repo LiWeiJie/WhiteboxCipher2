@@ -12,7 +12,7 @@
 #include "wbc2/wbc2.h"
 #include <AisinoSSL/sm4/sm4.h>
 
-#include <AisinoSSL/math/affine_transform.h>
+#include "matrixlib/affine_transform.h"
 // #include <AisinoSSL/internal/aisinossl_random.h>
 
 #ifdef WIN32
@@ -107,44 +107,71 @@ struct PermutationHelper
 {
     uint8_t (*alpha)[16][256];
     uint8_t (*alpha_inv)[16][256];
-    uint8_t (*beta)[16][256];
-    uint8_t (*beta_inv)[16][256];
+    uint8_t (*alpha_inv2)[16][256];
+    // uint8_t (*beta)[16][256];
+    // uint8_t (*beta_inv)[16][256];
+    // uint8_t (*beta_inv2)[16][256];
     uint8_t encode[16][256];
     uint8_t encode_inv[16][256];
-    uint8_t decode[16][256];
-    uint8_t decode_inv[16][256];
+    uint8_t encode_inv2[16][256];
 };
 
 
 #define RANDOM_AFFINE_MAT(x, xi, d)   GenRandomAffineTransform(x, xi, d)
 
+#include <stdio.h>
 int initPermutationHelper(int rounds, struct PermutationHelper *ph)
 {
     int ret = 0;
     ph->alpha = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
     ph->alpha_inv = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
-    if (ph->alpha==NULL || ph->alpha_inv==NULL)
+    ph->alpha_inv2 = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    if (ph->alpha==NULL || ph->alpha_inv==NULL || ph->alpha_inv2==NULL )
         return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
-    ph->beta = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
-    ph->beta_inv = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
-    if (ph->beta==NULL || ph->beta_inv==NULL)
-        return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+    // ph->beta = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    // ph->beta_inv = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    // ph->beta_inv2 = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    // if (ph->beta==NULL || ph->beta_inv==NULL || ph->beta_inv2==NULL )
+    //     return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
 
     MatGf2 tmg = NULL; //temp MatGf2
     MatGf2 tmg_inv = NULL;
-    AffineTransform tat; //temp AffineTransform
-    AffineTransform tat_inv;
-    RANDOM_AFFINE_MAT(&tat, &tat_inv, 8);
+    AffineTransform tata; //temp AffineTransform
+    AffineTransform tata_inv;
+    AffineTransform tatb; //temp AffineTransform
+    AffineTransform tatb_inv;
     int i,j;
     for (i=0; i<16; i++)
     {
+        RANDOM_AFFINE_MAT(&tata, &tata_inv, 8);
+        RANDOM_AFFINE_MAT(&tatb, &tatb_inv, 8);
         for (j=0; j<256; j++) 
         {
-            //TODO: add left mul and right mul for affinetransform
-            // ph->encode[i][j] = 
+            uint8_t t = AffineMulU8(tata, j);
+            ph->encode[i][j] = U8MulAffine(t, tatb);
+            ph->encode_inv[i][ ph->encode[i][j] ] = j;
+            ph->encode_inv2[i][ U8MulMat( MatMulU8(tata.linear_map, j), tatb.linear_map) ] = j;
+            // assert(AffineMulU8(tata_inv, ph->encode[i][j])==j);
+            // ph->encode_inv[i][ ph->encode[i][j] ] = j;
+        }
+    }    
+
+    int r;
+    for (r=0; r<rounds; r++)
+    {
+        for (i=0; i<16; i++)
+        {
+            RANDOM_AFFINE_MAT(&tata, &tata_inv, 8);
+            RANDOM_AFFINE_MAT(&tatb, &tatb_inv, 8);
+            for (j=0; j<256; j++) 
+            {
+                uint8_t t = AffineMulU8(tata, j);
+                ph->alpha[r][i][j] = U8MulAffine(t, tatb);
+                ph->alpha_inv[r][i][ ph->alpha[r][i][j] ] = j;
+                ph->alpha_inv2[r][i][ U8MulMat( MatMulU8(tata.linear_map, j), tatb.linear_map) ] = j;
+            }
         }
     }
-
     
     return ret;
 }
@@ -155,8 +182,87 @@ int addPermutationLayer(int rounds, FeistalBox *box)
     struct PermutationHelper ph;
     if ((ret = initPermutationHelper(rounds, &ph)))
         return ret;
+
+    box->p = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    if (box->p==NULL)
+        return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
     
-    
+    const int _ob = box->outputBytes;
+    const int _ib = box->inputBytes;
+    const int _bb = box->blockBytes;
+    uint64_t upper = ((long long)1<<(8*_ib));
+    int r;
+    uint8_t * otable = box->table;
+    box->table = (uint8_t*) malloc(rounds * _ob * upper);
+    uint8_t digital[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    uint32_t pos = 0;
+    int i, j;
+
+    uint8_t (*table_ptr);
+    table_ptr = box->table;
+    for (r=0; r<rounds; r++)
+    {
+        for (pos=0; pos<upper; pos++)
+        {
+            digital[_ib-1]++;
+            pos ++;
+            for (j=_ib-2; j>=0; j--)
+            {
+                if (digital[j+1]==0)
+                {
+                    digital[j]++;
+                } else {
+                    break;
+                }
+            }
+            
+            uint8_t (*prev_ptr)[16][256];
+            uint8_t (*prev_inv_ptr)[16][256];
+            uint8_t (*prev_inv2_ptr)[16][256];
+            uint8_t (*current_ptr)[16][256];
+
+            if (r==0)
+            {
+                prev_ptr = &(ph.encode);
+                prev_inv_ptr = &(ph.encode_inv);
+                prev_inv2_ptr = &(ph.encode_inv2);
+            } else {
+                prev_ptr = &(ph.alpha[r-1]);
+                prev_inv_ptr = &(ph.alpha_inv[r-1]);
+                prev_inv2_ptr = &(ph.alpha_inv2[r-1]);
+            }
+            current_ptr = &(ph.alpha[r]);
+            unsigned long long int offset1 = 0;
+            unsigned long long int offset2 = 0;
+
+            for (j=0; j<_ib; j++) 
+            {
+                offset1 = (offset1<<8) + (*prev_inv_ptr)[j][digital[j]];
+                offset2 = (offset2<<8) + digital[j];
+            }
+            uint8_t *ptr = table_ptr + offset2*_ob;
+            uint8_t *optr = otable + offset1*_ob;
+            for (j=_ib; j<_bb; j++)
+            {
+                ptr[j-_ib] =   (*prev_ptr)[j][ optr[j-_ib] ];
+            }
+
+            for (i=0; i<16; ++i)
+            {
+                for (j=0; j<256; ++j)
+                {
+                    box->p[r][i][j] = (*current_ptr)[i][(*prev_inv2_ptr)[ (i+_ib)%_bb ][j]];
+                }
+            }            
+        }
+        table_ptr += _ob * upper;
+    }
+
+    memcpy(box->encode, ph.encode, 16*256);
+    memcpy(box->decode, ph.alpha_inv[rounds-1], 16*256);
+        
+    free(otable);
+    otable = NULL;
     return ret;
 }
 
