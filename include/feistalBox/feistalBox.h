@@ -7,6 +7,8 @@
 #include<stdlib.h>
 #define FEISTALBOX_ENC 1
 #define FEISTALBOX_DEC 0
+#define WRAP_LEN 0
+#define NOT_WRAP_LEN 1
 
 # ifdef  __cplusplus
 extern "C" {
@@ -27,15 +29,21 @@ extern "C" {
 void FEISTALBOX_encrypt(const unsigned char *in, unsigned char *out, const FeistalBox *fb);
 void FEISTALBOX_decrypt(const unsigned char *in, unsigned char *out, const FeistalBox *fb);
 
-void FEISTALBOX_wcbc_encrypt(const unsigned char *in, unsigned char *out,
+size_t FEISTALBOX_wcbc_encrypt(const unsigned char *in, unsigned char *out,
                      size_t length, const FeistalBox *fb,
-                     const unsigned char *ivec, const int enc);
+                     unsigned char *ivec, const int enc, uint8_t wrap_flag);
 
-void FEISTALBOX_cfb_encrypt(const unsigned char *in, unsigned char *out,
+size_t FEISTALBOX_wcfb_encrypt(const unsigned char *in, unsigned char *out,
+                     size_t length, const FeistalBox *fb, int* num,
+                     unsigned char *ivec, const int enc, uint8_t wrap_flag);
+
+size_t FEISTALBOX_cbc_encrypt(const unsigned char *in, unsigned char *out,
                      size_t length, const FeistalBox *fb,
-                     const unsigned char *ivec, const int enc);
+                     unsigned char *ivec, const int enc, uint8_t wrap_flag);
 
-
+size_t FEISTALBOX_cfb_encrypt(const unsigned char *in, unsigned char *out,
+                     size_t length, const FeistalBox *fb, int* num,
+                     unsigned char *ivec, const int enc, uint8_t wrap_flag);
 
 # ifdef  __cplusplus
 }
