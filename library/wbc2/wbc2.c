@@ -91,6 +91,10 @@ int releaseFeistalBox(FeistalBox *box)
         free(box->table);
         box->table = 0;
     }
+    if (!box->p) {
+        free(box->p);
+        box->p = 0;
+    }
     return 0;
 }
 
@@ -170,9 +174,6 @@ struct PermutationHelper
     uint8_t (*alpha)[16][256];
     uint8_t (*alpha_inv)[16][256];
     uint8_t (*alpha_inv2)[16][256];
-    // uint8_t (*beta)[16][256];
-    // uint8_t (*beta_inv)[16][256];
-    // uint8_t (*beta_inv2)[16][256];
     uint8_t encode[16][256];
     uint8_t encode_inv[16][256];
     uint8_t encode_inv2[16][256];
@@ -190,12 +191,7 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
     ph->alpha_inv2 = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
     if (ph->alpha==NULL || ph->alpha_inv==NULL || ph->alpha_inv2==NULL )
         return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
-    // ph->beta = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
-    // ph->beta_inv = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
-    // ph->beta_inv2 = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
-    // if (ph->beta==NULL || ph->beta_inv==NULL || ph->beta_inv2==NULL )
-    //     return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
-
+    
     MatGf2 tmg = NULL; //temp MatGf2
     MatGf2 tmg_inv = NULL;
     AffineTransform tata; //temp AffineTransform
