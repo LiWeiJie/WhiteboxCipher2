@@ -17,6 +17,7 @@ void dump(const uint8_t * li, int len) {
 int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
 {
     // const uint8_t key[16] = { 0 };
+    printf("With Affine\n");
     FeistalBox fb_enc, fb_dec;
     FeistalBoxConfig cfg;
     initFeistalBoxConfig(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
@@ -40,6 +41,7 @@ int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
 
 int wbc2NoAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
 {
+    printf("No Affine\n");
     // const uint8_t key[16] = { 0 };
     FeistalBox fb_enc, fb_dec;
     FeistalBoxConfig cfg;

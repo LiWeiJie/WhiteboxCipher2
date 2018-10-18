@@ -19,7 +19,7 @@
 #include <winsock.h>
 #endif
 
-// #define DEBUG 1
+// #define _DEBUG_INFO 1
 
 int checkFeistalBoxConfig(const FeistalBoxConfig *cfg);
 
@@ -226,6 +226,7 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
         {
             RANDOM_AFFINE_MAT(&tata, &tata_inv, 8);
             RANDOM_AFFINE_MAT(&tatb, &tatb_inv, 8);
+
             for (j=0; j<256; j++) 
             {
                 uint8_t t = AffineMulU8(tata, j);
@@ -252,7 +253,6 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
 {
     int ret = 0;
     int rounds = box->rounds;
-
 
     box->p = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
     if (box->p==NULL)
@@ -345,7 +345,94 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
 
 int addDecPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
 {
-    return 0;
+    int ret = 0;
+    int rounds = box->rounds;
+
+    box->p = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    if (box->p==NULL)
+        return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+    
+    const int _ob = box->outputBytes;
+    const int _ib = box->inputBytes;
+    const int _bb = box->blockBytes;
+    uint64_t upper = ((long long)1<<(8*_ib));
+    int r;
+    uint8_t * otable = box->table;
+    box->table = (uint8_t*) malloc(rounds * _ob * upper);
+    uint8_t digital[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    uint64_t pos = 0;
+    int i, j;
+
+    uint8_t (*table_ptr);
+    table_ptr = box->table;
+    for (r=0; r<rounds; r++)
+    {
+        for (pos=0; pos<upper; pos++)
+        {
+            digital[_ib-1]++;
+            for (j=_ib-2; j>=0; j--)
+            {
+                if (digital[j+1]==0)
+                {
+                    digital[j]++;
+                } else {
+                    break;
+                }
+            }
+            
+            const uint8_t (*prev_ptr)[16][256];
+            const uint8_t (*prev_inv_ptr)[16][256];
+            const uint8_t (*prev_inv2_ptr)[16][256];
+            const uint8_t (*current_ptr)[16][256];
+
+            if (r==0)
+            {
+                prev_ptr = &(ph->encode);
+                prev_inv_ptr = &(ph->encode_inv);
+                prev_inv2_ptr = &(ph->encode_inv2);
+            } else {
+                prev_ptr = &(ph->alpha[r-1]);
+                prev_inv_ptr = &(ph->alpha_inv[r-1]);
+                prev_inv2_ptr = &(ph->alpha_inv2[r-1]);
+            }
+            current_ptr = &(ph->alpha[r]);
+            unsigned long long int offset1 = 0;
+            unsigned long long int offset2 = 0;
+
+            for (j=0; j<_ib; j++) 
+            {
+                offset1 = (offset1<<8) + (*prev_inv_ptr)[ (_bb-_ib+j) % _bb ][digital[j]];
+                offset2 = (offset2<<8) + digital[j];
+            }
+            uint8_t *ptr = table_ptr + offset2*_ob;
+            uint8_t *optr = otable + offset1*_ob;
+            for (j=_ib; j<_bb; j++)
+            {
+                ptr[j-_ib] =   (*prev_ptr)[(_bb-_ib+j) % _bb ][ optr[j-_ib] ];
+            }
+
+            for (i=0; i<16; ++i)
+            {
+                for (j=0; j<256; ++j)
+                {
+                    if (i>=_ib) {
+                        box->p[r][i][j] = (*current_ptr)[i][(*prev_inv2_ptr)[ (_bb-_ib+i)%_bb ][j]];
+                    }
+                    else {
+                        box->p[r][i][j] = (*current_ptr)[i][(*prev_inv_ptr)[ (_bb-_ib+i)%_bb ][j]];
+                    }
+                }
+            }            
+        }
+        table_ptr += _ob * upper;
+    }
+
+    memcpy(box->encode, ph->encode, 16*256);
+    memcpy(box->decode, ph->alpha_inv[rounds-1], 16*256);
+    free(otable);
+    otable = NULL;
+
+    return ret;
 }
 
 //
@@ -524,7 +611,7 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t *
             p2 = t;
         }
 
-        #ifdef DEBUG
+        #ifdef _DEBUG_INFO
             printf("Round %d:\n", i+1);
             dump(p1, 16);
         #endif
@@ -596,7 +683,11 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t *
             p1 = p2;
             p2 = t;
         }
-   }
+        #ifdef _DEBUG_INFO
+            printf("Round %d:\n", i+1);
+            dump(p1, 16);
+        #endif
+    }
     if (box->affine_on)
     {
         for (i=0; i<_bb; i++)
