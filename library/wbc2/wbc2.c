@@ -248,12 +248,11 @@ int releasePermutationHelper(int rounds, struct PermutationHelper *ph)
     return 0;
 }
 
-int addPermutationLayer(int rounds, FeistalBox *box)
+int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
 {
     int ret = 0;
-    struct PermutationHelper ph;
-    if ((ret = initPermutationHelper(rounds, &ph)))
-        return ret;
+    int rounds = box->rounds;
+
 
     box->p = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
     if (box->p==NULL)
@@ -287,22 +286,22 @@ int addPermutationLayer(int rounds, FeistalBox *box)
                 }
             }
             
-            uint8_t (*prev_ptr)[16][256];
-            uint8_t (*prev_inv_ptr)[16][256];
-            uint8_t (*prev_inv2_ptr)[16][256];
-            uint8_t (*current_ptr)[16][256];
+            const uint8_t (*prev_ptr)[16][256];
+            const uint8_t (*prev_inv_ptr)[16][256];
+            const uint8_t (*prev_inv2_ptr)[16][256];
+            const uint8_t (*current_ptr)[16][256];
 
             if (r==0)
             {
-                prev_ptr = &(ph.encode);
-                prev_inv_ptr = &(ph.encode_inv);
-                prev_inv2_ptr = &(ph.encode_inv2);
+                prev_ptr = &(ph->encode);
+                prev_inv_ptr = &(ph->encode_inv);
+                prev_inv2_ptr = &(ph->encode_inv2);
             } else {
-                prev_ptr = &(ph.alpha[r-1]);
-                prev_inv_ptr = &(ph.alpha_inv[r-1]);
-                prev_inv2_ptr = &(ph.alpha_inv2[r-1]);
+                prev_ptr = &(ph->alpha[r-1]);
+                prev_inv_ptr = &(ph->alpha_inv[r-1]);
+                prev_inv2_ptr = &(ph->alpha_inv2[r-1]);
             }
-            current_ptr = &(ph.alpha[r]);
+            current_ptr = &(ph->alpha[r]);
             unsigned long long int offset1 = 0;
             unsigned long long int offset2 = 0;
 
@@ -334,16 +333,20 @@ int addPermutationLayer(int rounds, FeistalBox *box)
         table_ptr += _ob * upper;
     }
 
-    memcpy(box->encode, ph.encode, 16*256);
-    memcpy(box->decode, ph.alpha_inv[rounds-1], 16*256);
+    memcpy(box->encode, ph->encode, 16*256);
+    memcpy(box->decode, ph->alpha_inv[rounds-1], 16*256);
         
     free(otable);
     otable = NULL;
 
-    ret = releasePermutationHelper(rounds, &ph);
     return ret;
 }
 
+
+int addDecPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
+{
+    return 0;
+}
 
 //
 int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mode, FeistalBox *box)
@@ -445,7 +448,20 @@ int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mod
 
     if (box->affine_on) {
         // 2. add permutation layer
-        ret = addPermutationLayer(rounds, box);
+        struct PermutationHelper ph;
+        if ((ret = initPermutationHelper(rounds, &ph)))
+            return ret;
+        
+        if (mode==eFeistalBoxEnc)
+            ret = addEncPermutationLayer(&ph, box);
+        else if (mode==eFeistalBoxDec)
+            ret = addDecPermutationLayer(&ph, box);
+        else 
+            return ret = FEISTAL_ROUND_ENC_MODE_INVALID;
+
+        if ((ret = releasePermutationHelper(rounds, &ph)))
+            return ret;
+        
     }
    
     return ret;
