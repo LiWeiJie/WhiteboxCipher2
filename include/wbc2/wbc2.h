@@ -18,7 +18,7 @@ extern "C" {
 # endif
 
 #define FEISTAL_ROUNDS 300
-#define FEISTA_MAX_ROUNDS 10000
+#define FEISTAL_MAX_ROUNDS 10000
 
 
 #define FEISTAL_ALGOS_NUM 2
@@ -26,6 +26,22 @@ enum FeistalBoxAlgo {
     FeistalBox_AES_128_128 = 1,
     FeistalBox_SM4_128_128
 };
+
+enum E_FeistalBoxEncMode
+{
+    eFeistalBoxDec = 0,
+    eFeistalBoxEnc = 1
+};
+
+typedef struct FeistalBoxConfig {
+    enum FeistalBoxAlgo algo;
+    int rounds;
+    int blockBytes ;
+    int inputBytes ;
+    int outputBytes ;
+    int affine_on;
+    uint8_t key[16];
+} FeistalBoxConfig;
 
 typedef struct FeistalBox {
     enum FeistalBoxAlgo algo;
@@ -36,7 +52,7 @@ typedef struct FeistalBox {
     uint8_t *table;       // finally, box = 2^(8*inputBytes) * outputBytes
     int tableSize;
     uint8_t (*p)[16][256]; //permutation layer, size: rounds * 512B
-    int enc_mode; //0 for enc, 1 for dec
+    enum E_FeistalBoxEncMode enc_mode;
     int affine_on;
     uint8_t encode[16][256];
     uint8_t decode[16][256];
@@ -57,8 +73,8 @@ typedef struct FeistalBox {
  **/
 
 
-int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box);
-int initFeistalBoxNoAffine(enum FeistalBoxAlgo algo, FeistalBox *box);
+int initFeistalBoxConfig(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBoxConfig *cfg);
+int initFeistalBoxConfigNoAffine(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBoxConfig *cfg);
 
 /**
  * @brief inputBytes + outputBytes should be 16
@@ -69,7 +85,7 @@ int initFeistalBoxNoAffine(enum FeistalBoxAlgo algo, FeistalBox *box);
  * @param box 
  * @return int 
  */
-int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBox *box);
+int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mode, FeistalBox *box);
 int releaseFeistalBox(FeistalBox *box);
 
 int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output);
@@ -77,6 +93,8 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t *
 int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output);
 
 // ERROR CODE DEFINE
+#define FEISTAL_NULL_PTR -001
+
 #define FEISTAL_BOX_NOT_IMPLEMENT -101
 #define FEISTAL_BOX_INVALID_ALGO -102
 #define FEISTAL_BOX_INVAILD_ARGUS -104
@@ -84,8 +102,9 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t *
 #define FEISTAL_BOX_MEMORY_NOT_ENOUGH -106
 
 #define FEISTAL_ROUND_NULL_BLOCK_PTR -201
-#define FEISTAL_ROUND_NULL_ROUND_TOO_SMALL -202
-#define FEISTAL_ROUND_NULL_ROUND_TOO_BIG -203
+#define FEISTAL_ROUND_NUM_TOO_SMALL -202
+#define FEISTAL_ROUND_NUM_TOO_BIG -203
+#define FEISTAL_ROUND_ENC_MODE_INVALID -204
 
 # ifdef  __cplusplus
 }

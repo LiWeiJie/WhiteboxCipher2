@@ -21,6 +21,8 @@
 
 // #define DEBUG 1
 
+int checkFeistalBoxConfig(const FeistalBoxConfig *cfg);
+
 static void dump(const uint8_t * li, int len) {
     int line_ctrl = 16;
     for (int i=0; i<len; i++) {
@@ -35,25 +37,32 @@ static void dump(const uint8_t * li, int len) {
 
 
 
-int _initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box, int affine_on) 
+int _initFeistalBox(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBoxConfig *cfg, int affine_on) 
 {
-    box->affine_on = affine_on;
     switch (algo) {
         case FeistalBox_AES_128_128:
-            box->algo = algo;
-            box->blockBytes = 16;
-            box->inputBytes = 0;
-            box->outputBytes = 0;
-            box->table = 0;
-            box->p = 0;
+            cfg->affine_on = affine_on;
+            cfg->algo = algo;
+            cfg->blockBytes = 16;
+            cfg->inputBytes = inputBytes;
+            cfg->outputBytes = outputBytes;
+            cfg->rounds = rounds;
+            // cfg->key = (uint8_t *)malloc(16);
+            // if (cfg->key==NULL)
+                // return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+            memcpy(cfg->key, key, 16);
             break;
         case FeistalBox_SM4_128_128:
-            box->algo = algo;
-            box->blockBytes = 16;
-            box->inputBytes = 0;
-            box->outputBytes = 0;
-            box->table = 0;
-            box->p = 0;
+            cfg->affine_on = affine_on;
+            cfg->algo = algo;
+            cfg->blockBytes = 16;
+            cfg->inputBytes = inputBytes;
+            cfg->outputBytes = outputBytes;
+            cfg->rounds = rounds;
+            // cfg->key = (uint8_t *)malloc(16);
+            // if (cfg->key==NULL)
+                // return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+            memcpy(cfg->key, key, 16);
             break;
         default:
             return FEISTAL_BOX_INVALID_ALGO;
@@ -62,16 +71,18 @@ int _initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box, int affine_on)
     return 0;
 }
 
-int initFeistalBox(enum FeistalBoxAlgo algo, FeistalBox *box)
+int initFeistalBoxConfig(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBoxConfig *cfg)
 {
-    return _initFeistalBox(algo, box, 1);
+    int ret = 0;
+    if ((ret = _initFeistalBox(algo, key, inputBytes, outputBytes, rounds, cfg, 1)))
+        return ret;
+    return ret = checkFeistalBoxConfig(cfg);
 }
 
-int initFeistalBoxNoAffine(enum FeistalBoxAlgo algo, FeistalBox *box)
+int initFeistalBoxConfigNoAffine(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBoxConfig *cfg)
 {
-    return _initFeistalBox(algo, box, 0);
+    return _initFeistalBox(algo, key, inputBytes, outputBytes, rounds, cfg, 0);
 }
-
 
 
 int releaseFeistalBox(FeistalBox *box)
@@ -84,9 +95,41 @@ int releaseFeistalBox(FeistalBox *box)
 }
 
 // 0: all fine, otherwise error code
+int checkFeistalBoxConfig(const FeistalBoxConfig *cfg)
+{
+    int ret = 0;
+    if (cfg==NULL)
+        return ret = FEISTAL_NULL_PTR;
+    // step 1. check algo
+    if (cfg->algo<1 || cfg->algo > FEISTAL_ALGOS_NUM)
+        return ret = FEISTAL_BOX_INVALID_ALGO;
+    // step 2. check block bytes
+    if (cfg->blockBytes != 16) {
+        return ret = FEISTAL_BOX_INVALID_BOX;
+    }
+
+    if (cfg->inputBytes > 4)
+        return ret = FEISTAL_BOX_INVAILD_ARGUS;
+
+    if (cfg->outputBytes > cfg->blockBytes)
+        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
+
+    if (cfg->inputBytes+cfg->outputBytes != cfg->blockBytes)
+        return  ret = FEISTAL_BOX_INVAILD_ARGUS;
+
+    if (cfg->rounds<1)
+        return ret = FEISTAL_ROUND_NUM_TOO_SMALL;
+    if (cfg->rounds>FEISTAL_MAX_ROUNDS)
+        return ret = FEISTAL_ROUND_NUM_TOO_BIG;
+
+    return ret;
+}
+
 int checkFeistalBox(const FeistalBox *box)
 {
     int ret = 0;
+    if (box==NULL)
+        return ret = FEISTAL_NULL_PTR;
     // step 1. check algo
     if (box->algo<1 || box->algo > FEISTAL_ALGOS_NUM)
         return ret = FEISTAL_BOX_INVALID_ALGO;
@@ -105,9 +148,9 @@ int checkFeistalBox(const FeistalBox *box)
         return  ret = FEISTAL_BOX_INVAILD_ARGUS;
 
     if (box->rounds<1)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_SMALL;
-    if (box->rounds>FEISTA_MAX_ROUNDS)
-        return ret = FEISTAL_ROUND_NULL_ROUND_TOO_BIG;
+        return ret = FEISTAL_ROUND_NUM_TOO_SMALL;
+    if (box->rounds>FEISTAL_MAX_ROUNDS)
+        return ret = FEISTAL_ROUND_NUM_TOO_BIG;
 
     return ret;
 }
@@ -303,16 +346,26 @@ int addPermutationLayer(int rounds, FeistalBox *box)
 
 
 //
-int generateFeistalBox(const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBox *box)
+int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mode, FeistalBox *box)
 {
     int ret = 0;
-        
-    box->inputBytes = inputBytes;
-    box->rounds = rounds;
-    box->outputBytes = outputBytes;
-
-    if ((ret = checkFeistalBox(box)))
+    if (cfg==NULL || box==NULL)
+        return ret = FEISTAL_NULL_PTR;
+    if ((ret=checkFeistalBoxConfig(cfg)))
         return ret;
+        
+    box->inputBytes = cfg->inputBytes;
+    box->rounds = cfg->rounds;
+    box->outputBytes = cfg->outputBytes;
+    box->blockBytes = cfg->blockBytes;
+    box->affine_on = cfg->affine_on;
+    box->algo = cfg->algo;
+    box->enc_mode = mode;
+
+    const uint8_t *key = cfg->key;
+    int inputBytes = cfg->inputBytes;
+    int outputBytes = cfg->outputBytes;
+    int rounds = cfg->rounds;
 
     // 1. generate T box
     uint8_t *plaintext;
@@ -612,18 +665,26 @@ int feistalRoundDecWithAffine(const FeistalBox *box, const uint8_t *block_input,
 
 int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
+    int ret = 0;
+    if (box->enc_mode!=eFeistalBoxEnc)
+        return ret = FEISTAL_ROUND_ENC_MODE_INVALID;
     if (box->affine_on) {
         return feistalRoundEncWithAffine(box, block_input, block_output);
     } else {
         return feistalRoundEncNoAffine(box, block_input, block_output);
     }
+    return ret;
 }
 
 int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
+    int ret = 0;
+    if (box->enc_mode!=eFeistalBoxDec)
+        return ret = FEISTAL_ROUND_ENC_MODE_INVALID;
     if (box->affine_on) {
         return feistalRoundDecWithAffine(box, block_input, block_output);
     } else {
         return feistalRoundDecNoAffine(box, block_input, block_output);
     }
+    return ret;
 }

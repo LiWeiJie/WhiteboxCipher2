@@ -17,30 +17,37 @@ void dump(const uint8_t * li, int len) {
 int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
 {
     // const uint8_t key[16] = { 0 };
-    FeistalBox fb;
-    initFeistalBox(FeistalBox_SM4_128_128, &fb);
-    int len = generateFeistalBox(key, 1, 15, rounds, &fb);
-    // len = generateFeistalBox(key, 1, 15, FEISTAL_ROUNDS, &fb);
+    FeistalBox fb_enc, fb_dec;
+    FeistalBoxConfig cfg;
+    initFeistalBoxConfig(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
+    int len = generateFeistalBox(&cfg, eFeistalBoxEnc, &fb_enc);
     printf("%d\n", len);
-    // dump(fb.table, len);
+    len = generateFeistalBox(&cfg, eFeistalBoxDec, &fb_dec);
+    printf("%d\n", len);
+    // dump(fb_enc.table, len);
     uint8_t *op, *buf;
     buf = (uint8_t*) malloc(16);
     op = (uint8_t*) malloc(16);
     dump(ip, 16);
-    feistalRoundEnc(&fb, ip, op);
+    feistalRoundEnc(&fb_enc, ip, op);
     dump(op, 16);
-    feistalRoundDec(&fb, op, buf);
+    feistalRoundDec(&fb_dec, op, buf);
     dump(buf, 16);
-    releaseFeistalBox(&fb);
+    releaseFeistalBox(&fb_enc);
+    releaseFeistalBox(&fb_dec);
     return 0;
 }
 
 int wbc2NoAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
 {
     // const uint8_t key[16] = { 0 };
-    FeistalBox fb;
-    initFeistalBoxNoAffine(FeistalBox_SM4_128_128, &fb);
-    int len = generateFeistalBox(key, 1, 15, rounds, &fb);
+    FeistalBox fb_enc, fb_dec;
+    FeistalBoxConfig cfg;
+    initFeistalBoxConfigNoAffine(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
+    int len = generateFeistalBox(&cfg, eFeistalBoxEnc, &fb_enc);
+    // len = generateFeistalBox(key, 1, 15, FEISTAL_ROUNDS, &fb);
+    printf("%d\n", len);
+    len = generateFeistalBox(&cfg, eFeistalBoxDec, &fb_dec);
     // len = generateFeistalBox(key, 1, 15, FEISTAL_ROUNDS, &fb);
     printf("%d\n", len);
     // dump(fb.table, len);
@@ -48,11 +55,12 @@ int wbc2NoAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     buf = (uint8_t*) malloc(16);
     op = (uint8_t*) malloc(16);
     dump(ip, 16);
-    feistalRoundEnc(&fb, ip, op);
+    feistalRoundEnc(&fb_enc, ip, op);
     dump(op, 16);
-    feistalRoundDec(&fb, op, buf);
+    feistalRoundDec(&fb_dec, op, buf);
     dump(buf, 16);
-    releaseFeistalBox(&fb);
+    releaseFeistalBox(&fb_enc);
+    releaseFeistalBox(&fb_dec);
     return 0;
 }
 
