@@ -14,13 +14,9 @@ void FEISTALBOX_decrypt(const unsigned char *in, unsigned char *out, const Feist
 /* allocate memory for store string ,remember to free this one */
 void* FEISTALBOX_export_to_str(const FeistalBox* fb){
     /* calculate size and allocate memory */
-    const int _ob = fb->outputBytes;
-    const int _ib = fb->inputBytes;
-    const int rounds = fb->rounds;
-    uint64_t upper = ((uint64_t)1<<(8*_ib));
     const uint64_t table_size = fb->tableSize;
-    const uint64_t p_size = (fb->affine_on)?rounds * P_LAYER_SIZE * sizeof(uint8_t) : 0;
-    size_t size = sizeof(enum FeistalBoxAlgo) + sizeof(enum E_FeistalBoxEncMode) +  sizeof(int) * 6   + table_size   + p_size + ENCODE_SIZE * 2;
+    const uint64_t p_size = fb->pSize;
+    size_t size = sizeof(FeistalBox) - 2 * POINTER_SIZE + table_size + p_size;
     void* result = malloc(size);
 
     unsigned char* iter = result;
@@ -57,13 +53,8 @@ FeistalBox* FEISTALBOX_import_from_str(void* src){
     tmp += sizeof(FeistalBox) - 2 * POINTER_SIZE;
 
     /* calculate table size*/
-    const int _ob = result->outputBytes;
-    const int _ib = result->inputBytes;
-    const int rounds = result->rounds;
-    const int tableSize = result->tableSize;
-    uint64_t upper = ((uint64_t)1<<(8*_ib));
-    const uint64_t table_size = upper * rounds * _ob;
-    const uint64_t p_size = rounds * P_LAYER_SIZE * sizeof(uint8_t);
+    const uint64_t table_size = result->tableSize;
+    const uint64_t p_size = result->pSize;
 
     void* table = malloc(table_size);
     void* p = malloc(p_size);
@@ -71,12 +62,17 @@ FeistalBox* FEISTALBOX_import_from_str(void* src){
     /* copy table data*/
     memcpy(table, tmp, table_size);
     tmp += table_size;
-
-    memcpy(p, tmp, p_size);
-    tmp += p_size;
-
     result->table = table;
-    result->p = p;
+
+
+    if(p_size != 0){
+        memcpy(p, tmp, p_size);
+        tmp += p_size;
+        result->p = p;
+    }else{
+        result->p = NULL;
+    }
+
 
     return result;
 }
