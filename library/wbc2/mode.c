@@ -115,7 +115,7 @@ size_t CRYPTO_wcbc128_decrypt(const unsigned char *in, unsigned char *out,
 size_t CRYPTO_wcfb128_encrypt(const unsigned char *in, unsigned char *out,
                               size_t len, unsigned char ivec[16],
                               block128_f block, set_key_f set_key, size_t type_size, int* num,
-                              const void *table, whiteBox_block128_f whiteBox, uint8_t wrap_flag){
+                              const void *table, whiteBox_block128_f whiteBox){
     if (len == 0)
         return 0;
 
@@ -146,7 +146,7 @@ size_t CRYPTO_wcfb128_encrypt(const unsigned char *in, unsigned char *out,
 size_t CRYPTO_wcfb128_decrypt(const unsigned char* in, unsigned char* out,
                             size_t len, unsigned char ivec[16],
                             block128_f block,set_key_f set_key, size_t type_size, int* num,
-                            const void* table, whiteBox_block128_f whiteBox, uint8_t wrap_flag){
+                            const void* table, whiteBox_block128_f whiteBox){
     /* at least one block*/
     if (len <= BLOCK_SIZE)
         return 0;
@@ -174,41 +174,40 @@ size_t CRYPTO_wcfb128_decrypt(const unsigned char* in, unsigned char* out,
     /*get last block*/
 }
 
-//TODO:debugging
-size_t CRYPTO_cbc128_wrap_encrypt(const unsigned char *in, unsigned char *out,
-                                  size_t len, const void *key,
-                                  unsigned char ivec[16], block128_f block){
-    size_t message_length;
-    size_t i;
-    unsigned char message_block[VECTOR_SIZE];
-    unsigned char block_iv[VECTOR_SIZE];
-    CRYPTO_cbc128_encrypt(in, out, len, key, ivec, block);
-
-    message_length = (len % 16 == 0)? len : len + BLOCK_SIZE - (len % 16) ;
-
-    out = out + message_length - BLOCK_SIZE;
-    memcpy(block_iv, out, VECTOR_SIZE);
-    out += BLOCK_SIZE;
-    set_message_block(message_block, &len);
-    for(i = 0;i<VECTOR_SIZE;i++){
-        block_iv[i] ^= message_block[i];
-    }
-
-    (*block) (block_iv, out, key);
-
-    /* return the output length*/
-    return message_length +  BLOCK_SIZE;
-
-
-}
-
-//TODO:debugging
-size_t CRYPTO_cbc128_wrap_decrypt(const unsigned char *in, unsigned char *out,
-                                  size_t len, const void *key,
-                                  unsigned char ivec[16], block128_f block){
-    CRYPTO_cbc128_decrypt(in, out, len, key, ivec, block);
-    size_t message_length;
-    out = out + len - BLOCK_SIZE;
-    memcpy(&message_length, out, VECTOR_SIZE/2);
-    return message_length;
-}
+////TODO:debugging
+//size_t CRYPTO_cbc128_wrap_encrypt(const unsigned char *in, unsigned char *out,
+//                                  size_t len, const void *key,
+//                                  unsigned char ivec[16], block128_f block){
+//    size_t message_length;
+//    size_t i;
+//    unsigned char message_block[VECTOR_SIZE];
+//    unsigned char block_iv[VECTOR_SIZE];
+//    CRYPTO_cbc128_encrypt(in, out, len, key, ivec, block);
+//
+//    message_length = (len % 16 == 0)? len : len + BLOCK_SIZE - (len % 16) ;
+//
+//    out = out + message_length - BLOCK_SIZE;
+//    memcpy(block_iv, out, VECTOR_SIZE);
+//    out += BLOCK_SIZE;
+//    set_message_block(message_block, &len);
+//    for(i = 0;i<VECTOR_SIZE;i++){
+//        block_iv[i] ^= message_block[i];
+//    }
+//
+//    (*block) (block_iv, out, key);
+//
+//    /* return the output length*/
+//    return message_length +  BLOCK_SIZE;
+//
+//
+//}
+//
+//size_t CRYPTO_cbc128_wrap_decrypt(const unsigned char *in, unsigned char *out,
+//                                  size_t len, const void *key,
+//                                  unsigned char ivec[16], block128_f block){
+//    CRYPTO_cbc128_decrypt(in, out, len, key, ivec, block);
+//    size_t message_length;
+//    out = out + len - BLOCK_SIZE;
+//    memcpy(&message_length, out, VECTOR_SIZE/2);
+//    return message_length;
+//}

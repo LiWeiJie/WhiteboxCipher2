@@ -31,13 +31,14 @@ size_t CRYPTO_wcbc128_decrypt(const unsigned char* in, unsigned char* out,
 size_t CRYPTO_wcfb128_encrypt(const unsigned char *in, unsigned char *out,
                                 size_t len, unsigned char ivec[16],
                                 block128_f block, set_key_f set_key, size_t type_size, int* num,
-                                const void *table, whiteBox_block128_f whiteBox, uint8_t wrap_flag);
+                                const void *table, whiteBox_block128_f whiteBox);
 
 size_t CRYPTO_wcfb128_decrypt(const unsigned char* in, unsigned char* out,
                             size_t len, unsigned char ivec[16],
                             block128_f block,set_key_f set_key, size_t type_size, int* num,
-                            const void* table, whiteBox_block128_f whiteBox, uint8_t wrap_flag);
+                            const void* table, whiteBox_block128_f whiteBox);
 
+/*
 size_t CRYPTO_cbc128_wrap_encrypt(const unsigned char *in, unsigned char *out,
                                   size_t len, const void *key,
                                   unsigned char ivec[16], block128_f block);
@@ -54,4 +55,5 @@ size_t CRYPTO_cfb128_wrap_decrypt(const unsigned char *in, unsigned char *out,
                                   size_t len, const void *key,int* num,
                                   unsigned char ivec[16], block128_f block);
 
+*/
 #endif
