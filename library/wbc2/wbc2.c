@@ -203,6 +203,7 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
     {
         RANDOM_AFFINE_MAT(&tata, &tata_inv, 8);
         RANDOM_AFFINE_MAT(&tatb, &tatb_inv, 8);
+
         for (j=0; j<256; j++) 
         {
             uint8_t t = AffineMulU8(tata, j);
@@ -261,7 +262,7 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
     uint8_t * otable = box->table;
     box->table = (uint8_t*) malloc(rounds * _ob * upper);
     uint8_t digital[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-    uint32_t pos = 0;
+    uint64_t pos = 0;
     int i, j;
 
     uint8_t (*table_ptr);
@@ -271,7 +272,6 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
         for (pos=0; pos<upper; pos++)
         {
             digital[_ib-1]++;
-            pos ++;
             for (j=_ib-2; j>=0; j--)
             {
                 if (digital[j+1]==0)
@@ -317,7 +317,12 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
             {
                 for (j=0; j<256; ++j)
                 {
-                    box->p[r][i][j] = (*current_ptr)[i][(*prev_inv2_ptr)[ (i+_ib)%_bb ][j]];
+                    if (i<_ob) {
+                        box->p[r][i][j] = (*current_ptr)[i][(*prev_inv2_ptr)[ (i+_ib)%_bb ][j]];
+                    }
+                    else {
+                        box->p[r][i][j] = (*current_ptr)[i][(*prev_inv_ptr)[ (i+_ib)%_bb ][j]];
+                    }
                 }
             }            
         }
