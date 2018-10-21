@@ -30,12 +30,12 @@ int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     printf("initFeistalBoxConfig Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
     set_time_start();
-    ret = generateFeistalBox(&cfg, eFeistalBoxEnc, &fb_enc);
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeEnc, &fb_enc);
     set_time_ends();
     printf("generate Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
     set_time_start();
-    ret = generateFeistalBox(&cfg, eFeistalBoxDec, &fb_dec);
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeDec, &fb_dec);
     set_time_ends();
     printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     
@@ -80,11 +80,11 @@ int wbc2NoAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     printf("initFeistalBoxConfigNoAffine Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
     set_time_start();
-    ret = generateFeistalBox(&cfg, eFeistalBoxEnc, &fb_enc);
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeEnc, &fb_enc);
     set_time_ends();
     printf("generate Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     set_time_start();
-    ret = generateFeistalBox(&cfg, eFeistalBoxDec, &fb_dec);
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeDec, &fb_dec);
     set_time_ends();
     printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
