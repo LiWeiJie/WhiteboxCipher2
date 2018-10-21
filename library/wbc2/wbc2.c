@@ -41,27 +41,21 @@ int _initFeistalBox(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes
 {
     switch (algo) {
         case FeistalBox_AES_128_128:
-            cfg->affine_on = affine_on;
             cfg->algo = algo;
+            cfg->rounds = rounds;
             cfg->blockBytes = 16;
             cfg->inputBytes = inputBytes;
             cfg->outputBytes = outputBytes;
-            cfg->rounds = rounds;
-            // cfg->key = (uint8_t *)malloc(16);
-            // if (cfg->key==NULL)
-                // return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+            cfg->affine_on = affine_on;                
             memcpy(cfg->key, key, 16);
             break;
         case FeistalBox_SM4_128_128:
-            cfg->affine_on = affine_on;
             cfg->algo = algo;
+            cfg->rounds = rounds;
             cfg->blockBytes = 16;
             cfg->inputBytes = inputBytes;
             cfg->outputBytes = outputBytes;
-            cfg->rounds = rounds;
-            // cfg->key = (uint8_t *)malloc(16);
-            // if (cfg->key==NULL)
-                // return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
+            cfg->affine_on = affine_on;
             memcpy(cfg->key, key, 16);
             break;
         default:
@@ -250,7 +244,8 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
     int ret = 0;
     int rounds = box->rounds;
 
-    box->p = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    box->pSize = rounds * 4096 * sizeof(uint8_t);
+    box->p = (uint8_t (*)[16][256]) malloc(box->pSize);
     if (box->p==NULL)
         return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
     
@@ -260,7 +255,8 @@ int addEncPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
     uint64_t upper = ((long long)1<<(8*_ib));
     int r;
     uint8_t * otable = box->table;
-    box->table = (uint8_t*) malloc(rounds * _ob * upper);
+    box->tableSize = rounds * _ob * upper * sizeof(uint8_t);
+    box->table = (uint8_t*) malloc(box->tableSize);
     uint8_t digital[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     uint64_t pos = 0;
     int i, j;
@@ -344,7 +340,8 @@ int addDecPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
     int ret = 0;
     int rounds = box->rounds;
 
-    box->p = (uint8_t (*)[16][256]) malloc(rounds*4096*sizeof(uint8_t));
+    box->pSize = rounds * 4096 * sizeof(uint8_t);
+    box->p = (uint8_t (*)[16][256]) malloc(box->pSize);
     if (box->p==NULL)
         return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
     
@@ -354,7 +351,8 @@ int addDecPermutationLayer(const struct PermutationHelper *ph, FeistalBox *box)
     uint64_t upper = ((long long)1<<(8*_ib));
     int r;
     uint8_t * otable = box->table;
-    box->table = (uint8_t*) malloc(rounds * _ob * upper);
+    box->tableSize = rounds * _ob * upper * sizeof(uint8_t);
+    box->table = (uint8_t*) malloc(box->tableSize);
     uint8_t digital[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     uint64_t pos = 0;
     int i, j;
@@ -532,12 +530,13 @@ int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mod
     if (box->affine_on) {
         // 2. add permutation layer
         struct PermutationHelper ph;
+        
         if ((ret = initPermutationHelper(rounds, &ph)))
             return ret;
         
-        if (mode==eFeistalBoxEnc)
+        if (mode==eFeistalBoxModeEnc)
             ret = addEncPermutationLayer(&ph, box);
-        else if (mode==eFeistalBoxDec)
+        else if (mode==eFeistalBoxModeDec)
             ret = addDecPermutationLayer(&ph, box);
         else 
             return ret = FEISTAL_ROUND_ENC_MODE_INVALID;
@@ -553,7 +552,7 @@ int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mod
 int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
     int ret = 0;
-    if (box->enc_mode!=eFeistalBoxEnc)
+    if (box->enc_mode!=eFeistalBoxModeEnc)
         return ret = FEISTAL_ROUND_ENC_MODE_INVALID;
 
     if ((ret = checkFeistalBox(box)))
@@ -627,7 +626,7 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t *
 int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t * block_output)
 {
     int ret = 0;
-    if (box->enc_mode!=eFeistalBoxDec)
+    if (box->enc_mode!=eFeistalBoxModeDec)
         return ret = FEISTAL_ROUND_ENC_MODE_INVALID;
     if ((ret = checkFeistalBox(box)))
         return ret;
