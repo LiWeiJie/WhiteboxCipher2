@@ -50,7 +50,7 @@ void CRYPTO_wcbc128_decrypt(const unsigned char* in, unsigned char* out,
 
     size_t i;
     unsigned char user_key[KEY_SIZE];
-    unsigned char iv[VECTOR_SIZE];
+//    unsigned char iv[VECTOR_SIZE];
     unsigned char block_iv[VECTOR_SIZE];
     memcpy(block_iv, in, BLOCK_SIZE);
     void* key;

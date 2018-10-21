@@ -38,7 +38,21 @@ uint8_t U8MulAffine(uint8_t data, const AffineTransform aff);
 uint16_t U16MulAffine(uint16_t data, const AffineTransform aff);
 uint32_t U32MulAffine(uint32_t data, const AffineTransform aff);
 
+/**
+ * @brief Obsolete, equivalent to release
+ * 
+ * @param aff 
+ * @return int 
+ */
 int AffineTransformFree(AffineTransform *aff);
+
+/**
+ * @brief release source in AffineTransform
+ * 
+ * @param aff 
+ * @return int 
+ */
+int AffineTransformRelease(AffineTransform *aff);
 
 /**
  * @brief export AffineTransform to str

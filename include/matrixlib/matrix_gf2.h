@@ -125,7 +125,7 @@ MatGf2 MatGf2Mul(const MatGf2 a, const MatGf2 b, MatGf2 *dst);
 MatGf2 MatGf2Add(const MatGf2 a, const MatGf2 b, MatGf2 *dst);
 
 /**
- * MatGf2 dst: Preallocated matrix, may be NULL for automatic creation.
+ * MatGf2 dst: Preallocated matrix, could be NULL for automatic creation.
  * */
 int MatGf2Transpose(const MatGf2 a, MatGf2 *dst);
 

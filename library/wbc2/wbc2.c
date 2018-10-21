@@ -23,18 +23,19 @@
 
 int checkFeistalBoxConfig(const FeistalBoxConfig *cfg);
 
+#ifdef _DEBUG_INFO
 static void dump(const uint8_t * li, int len) {
-    int line_ctrl = 16;
-    for (int i=0; i<len; i++) {
-        printf("%02X", (*li++));
-        if ((i+1)%line_ctrl==0) {
-            printf("\n");
-        } else {
-            printf(" ");
-        }
-    }
+   int line_ctrl = 16;
+   for (int i=0; i<len; i++) {
+       printf("%02X", (*li++));
+       if ((i+1)%line_ctrl==0) {
+           printf("\n");
+       } else {
+           printf(" ");
+       }
+   }
 }
-
+#endif
 
 
 int _initFeistalBox(enum FeistalBoxAlgo algo, const uint8_t *key, int inputBytes, int outputBytes, int rounds, FeistalBoxConfig *cfg, int affine_on) 
@@ -186,8 +187,6 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
     if (ph->alpha==NULL || ph->alpha_inv==NULL || ph->alpha_inv2==NULL )
         return ret = FEISTAL_BOX_MEMORY_NOT_ENOUGH;
     
-    MatGf2 tmg = NULL; //temp MatGf2
-    MatGf2 tmg_inv = NULL;
     AffineTransform tata; //temp AffineTransform
     AffineTransform tata_inv;
     AffineTransform tatb; //temp AffineTransform
@@ -207,6 +206,10 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
             // assert(AffineMulU8(tata_inv, ph->encode[i][j])==j);
             // ph->encode_inv[i][ ph->encode[i][j] ] = j;
         }
+        AffineTransformRelease(&tata);
+        AffineTransformRelease(&tata_inv);
+        AffineTransformRelease(&tatb);
+        AffineTransformRelease(&tatb_inv);
     }    
 
     int r;
@@ -224,6 +227,10 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
                 ph->alpha_inv[r][i][ ph->alpha[r][i][j] ] = j;
                 ph->alpha_inv2[r][i][ U8MulMat( MatMulU8(tata.linear_map, j), tatb.linear_map) ] = j;
             }
+            AffineTransformRelease(&tata);
+            AffineTransformRelease(&tata_inv);
+            AffineTransformRelease(&tatb);
+            AffineTransformRelease(&tatb_inv);
         }
     }
     
