@@ -39,6 +39,11 @@ int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     set_time_ends();
     printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     
+    printf("enc table size: %d\tp size: %d\n", fb_enc.tableSize, fb_enc.pSize);
+    printf("dec table size: %d\tp size: %d\n", fb_dec.tableSize, fb_dec.pSize);
+
+    printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    
     // dump(fb_enc.table, len);
     uint8_t *op, *buf;
     buf = (uint8_t*) malloc(16);
@@ -63,6 +68,8 @@ int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     // dump(buf, 16);
     releaseFeistalBox(&fb_enc);
     releaseFeistalBox(&fb_dec);
+    free(buf);
+    free(op);
     return 0;
 }
 
@@ -112,6 +119,8 @@ int wbc2NoAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     // dump(buf, 16);
     releaseFeistalBox(&fb_enc);
     releaseFeistalBox(&fb_dec);
+    free(buf);
+    free(op);
     return 0;
 }
 
@@ -119,14 +128,14 @@ int wbc2_example()
 {
     const uint8_t key[16] = { 0x12,0x34,0x56,0x78,0x9a,0xbc,0xde,0xf0,0x12,0x34,0x56,0x78,0x9a,0xbc,0xde,0xf0};
     const uint8_t ip[16] = { 0x01,0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
-    int rounds = 10;
-    wbc2NoAffine(key, ip, 10);
-    wbc2NoAffine(key, ip, 100);
-    wbc2NoAffine(key, ip, 1000);
+//    int rounds = 10;
+    wbc2NoAffine(key, ip, 5);
+    wbc2NoAffine(key, ip, 50);
+    wbc2NoAffine(key, ip, 500);
     printf("\n");
-    wbc2WithAffine(key, ip, 10);
-    wbc2WithAffine(key, ip, 100);
-    wbc2WithAffine(key, ip, 1000);
+    wbc2WithAffine(key, ip, 5);
+    wbc2WithAffine(key, ip, 50);
+    wbc2WithAffine(key, ip, 500);
     printf("\n");
     return 0;
 }

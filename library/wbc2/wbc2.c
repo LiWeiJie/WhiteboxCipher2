@@ -82,11 +82,11 @@ int initFeistalBoxConfigNoAffine(enum FeistalBoxAlgo algo, const uint8_t *key, i
 
 int releaseFeistalBox(FeistalBox *box)
 {
-    if (!box->table) {
+    if (box->table != NULL) {
         free(box->table);
         box->table = 0;
     }
-    if (!box->p) {
+    if (box->p != NULL) {
         free(box->p);
         box->p = 0;
     }
@@ -453,6 +453,9 @@ int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mod
     box->algo = cfg->algo;
     box->enc_mode = mode;
 
+    box->table = NULL;
+    box->p = NULL;
+
     const uint8_t *key = cfg->key;
     int inputBytes = cfg->inputBytes;
     int outputBytes = cfg->outputBytes;
@@ -627,6 +630,9 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t *
     } else {
         memcpy(block_output, p1, _bb);
     }
+    free(p1);
+    free(p2);
+    p1 = p2 = NULL;
     return ret;
 }
 
@@ -699,5 +705,8 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t *
     } else {
         memcpy(block_output, p1, _bb);
     }    
+    free(p1);
+    free(p2);
+    p1 = p2 = NULL;
     return ret;
 }
