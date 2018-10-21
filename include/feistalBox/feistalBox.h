@@ -26,6 +26,7 @@ extern "C" {
  @param enc 1 to FEISTALBOX_ENC, 0 to FEISTALBOX_DEC
  */
 
+/* key generation define in wbc2.h */
 void FEISTALBOX_encrypt(const unsigned char *in, unsigned char *out, const FeistalBox *fb);
 void FEISTALBOX_decrypt(const unsigned char *in, unsigned char *out, const FeistalBox *fb);
 
@@ -44,6 +45,11 @@ size_t FEISTALBOX_cbc_encrypt(const unsigned char *in, unsigned char *out,
 size_t FEISTALBOX_cfb_encrypt(const unsigned char *in, unsigned char *out,
                      size_t length, const FeistalBox *fb, int* num,
                      unsigned char *ivec, const int enc, uint8_t wrap_flag);
+
+FeistalBox* FEISTALBOX_import_from_str(void* src);
+
+void* FEISTALBOX_export_to_str(const FeistalBox* fb);
+
 
 # ifdef  __cplusplus
 }
