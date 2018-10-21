@@ -149,6 +149,8 @@ int import_test()
     FeistalBox fb_enc, fb_dec;
     FeistalBoxConfig cfg;
     int ret;
+    size_t size1 = 0;
+    size_t size2 = 0;
 
     set_time_start();
     ret = initFeistalBoxConfig(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
@@ -165,10 +167,11 @@ int import_test()
     set_time_ends();
     printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
-    unsigned char* buf1 = FEISTALBOX_export_to_str(&fb_enc);
-    unsigned char* buf2 = FEISTALBOX_export_to_str(&fb_dec);
+    unsigned char* buf1 = FEISTALBOX_export_to_str(&fb_enc, &size1);
+    unsigned char* buf2 = FEISTALBOX_export_to_str(&fb_dec, &size2);
     void* box1 = FEISTALBOX_import_from_str(buf1);
     void* box2 = FEISTALBOX_import_from_str(buf2);
+    printf("Buf1 size:%d\nBuf2 size:%d\n", size1, size2);
 
 
     // dump(fb_enc.table, len);
@@ -313,11 +316,11 @@ int wcbc_example(){
 
 int main(int argv, char **argc) 
 {
-    wbc2_example();
-    printf("wcbc test:\n");
-    wcbc_example();
-    printf("wcfb test:\n");
-    wcfb_example();
+   // wbc2_example();
+   // printf("wcbc test:\n");
+   // wcbc_example();
+   // printf("wcfb test:\n");
+   // wcfb_example();
     import_test();
     return 0;
 }

@@ -85,7 +85,8 @@ size_t FEISTALBOX_cfb_encrypt(const unsigned char *in, unsigned char *out,
 
 FeistalBox* FEISTALBOX_import_from_str(void* src);
 
-void* FEISTALBOX_export_to_str(const FeistalBox* fb);
+/* return the pointer of string and return the size at sz*/
+void* FEISTALBOX_export_to_str(const FeistalBox* fb, size_t* sz);
 
 
 # ifdef  __cplusplus
