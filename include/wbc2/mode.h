@@ -6,6 +6,11 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+#define WRAP_LEN 0
+#define NOT_WRAP_LEN 1
+#define ENC 1
+#define DEC 0
+
 typedef void (*whiteBox_block128_f)(const unsigned char in[16],
                            unsigned char out[16],
                            const void *table);
@@ -13,18 +18,42 @@ typedef void (*whiteBox_block128_f)(const unsigned char in[16],
 typedef void (*set_key_f)(void* key,const unsigned char* user_key);
 
 
-void CRYPTO_wcbc128_encrypt(const unsigned char* in, unsigned char* out,
-                            size_t len, const unsigned char ivec[16],
+size_t CRYPTO_wcbc128_encrypt(const unsigned char* in, unsigned char* out,
+                            size_t len, unsigned char ivec[16],
                             block128_f block,set_key_f set_key, size_t type_size,
+                            const void* table, whiteBox_block128_f whiteBox,uint8_t wrap_flag);
+
+size_t CRYPTO_wcbc128_decrypt(const unsigned char* in, unsigned char* out,
+                            size_t len, unsigned char ivec[16],
+                            block128_f block,set_key_f set_key, size_t type_size,
+                            const void* table, whiteBox_block128_f whiteBox,uint8_t wrap_flag);
+
+size_t CRYPTO_wcfb128_encrypt(const unsigned char *in, unsigned char *out,
+                                size_t len, unsigned char ivec[16],
+                                block128_f block, set_key_f set_key, size_t type_size, int* num,
+                                const void *table, whiteBox_block128_f whiteBox);
+
+size_t CRYPTO_wcfb128_decrypt(const unsigned char* in, unsigned char* out,
+                            size_t len, unsigned char ivec[16],
+                            block128_f block,set_key_f set_key, size_t type_size, int* num,
                             const void* table, whiteBox_block128_f whiteBox);
 
-void CRYPTO_wcbc128_decrypt(const unsigned char* in, unsigned char* out,
-                            size_t len, const unsigned char ivec[16],
-                            block128_f block,set_key_f set_key, size_t type_size,
-                            const void* table, whiteBox_block128_f whiteBox);
+/*
+size_t CRYPTO_cbc128_wrap_encrypt(const unsigned char *in, unsigned char *out,
+                                  size_t len, const void *key,
+                                  unsigned char ivec[16], block128_f block);
 
-void CRYTO_flatWhite128_encrypt();
+size_t CRYPTO_cbc128_wrap_decrypt(const unsigned char *in, unsigned char *out,
+                                  size_t len, const void *key,
+                                  unsigned char ivec[16], block128_f block);
 
-void CRYTO_flatWhite128_decrypt();
+size_t CRYPTO_cfb128_wrap_encrypt(const unsigned char *in, unsigned char *out,
+                                  size_t len, const void *key, int* num,
+                                  unsigned char ivec[16], block128_f block);
 
+size_t CRYPTO_cfb128_wrap_decrypt(const unsigned char *in, unsigned char *out,
+                                  size_t len, const void *key,int* num,
+                                  unsigned char ivec[16], block128_f block);
+
+*/
 #endif
