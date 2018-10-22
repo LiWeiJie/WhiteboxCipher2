@@ -3,7 +3,7 @@
 
 JNIEXPORT jbyteArray JNICALL Java_FeistalBox_getFeistalBoxByte(JNIEnv *env, jclass obj, jstring jkey, jint jround, jint isEnc,jint mode)
 {
-    const unsigned char user_key[] = (*env)->GetStringUTFChars(env, jkey, NULL);
+    const unsigned char* user_key = (*env)->GetStringUTFChars(env, jkey, NULL);
     const int round = jround;
     int enc_flag = (isEnc == FeistalBox_ENC)? eFeistalBoxModeEnc: eFeistalBoxModeDec;
     int ret;
@@ -23,9 +23,9 @@ JNIEXPORT jbyteArray JNICALL Java_FeistalBox_getFeistalBoxByte(JNIEnv *env, jcla
     }
 
     box_str = FEISTALBOX_export_to_str(&fb, &box_size);
-    (*env)->SetByteArrayRegion(res, 0, box_size, box_str);
+    (*env)->SetByteArrayRegion(env, res, 0, box_size, box_str);
 
-    releaseFeistalBox(fb);
+    releaseFeistalBox(&fb);
     free(box_str);
     return res;
 }
