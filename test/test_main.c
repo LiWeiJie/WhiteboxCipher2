@@ -16,6 +16,14 @@ void dump(const uint8_t * li, int len) {
 
 #include "count_cycles.h"
 
+size_t getFileSize(FILE* f){
+    size_t res;
+    fseek(f , 0 ,SEEK_END);
+    res = ftell(f);
+    rewind(f);
+    return res;
+}
+
 int wbc2WithAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
 {
     // const uint8_t key[16] = { 0 };
@@ -273,8 +281,9 @@ int cbc_cfb_example(){
     int rounds = 10;
     int ret;
     const uint8_t key[16] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
-    const uint8_t ip[32] = { 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xEE};
-    unsigned char iv[16] = {0x11, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0xde, 0xf0, 0x12, 0x37, 0x56, 0x75, 0x94, 0xb3, 0xd2, 0xf1};
+    const uint8_t ip[32] = { 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x21, 0x41, 0x61, 0x81, 0xA1, 0xC1, 0x1F, 0x01, 0x13, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0xEF, 0xEE};
+     unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+   unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     FeistalBoxConfig cfg;
     FeistalBox fb_enc, fb_dec;
     //initFeistalBox(FeistalBox_SM4_128_128, &fb);
@@ -309,8 +318,7 @@ int cbc_cfb_example(){
     printf("Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     // dump(op, 16);
     set_time_start();
-    num = 0;
-    ret = FEISTALBOX_cfb_encrypt(op, buf, 32, &fb_enc, &num,iv, FEISTALBOX_DEC);
+    ret = FEISTALBOX_cfb_encrypt(op, buf, 32, &fb_enc, &num,iv2, FEISTALBOX_DEC);
     set_time_ends();
     printf("Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     ret = memcmp(buf, ip, 32);
@@ -356,8 +364,8 @@ int wcbc_example(){
 
     // dump(fb_enc.table, len);
     uint8_t *op, *buf;
-    buf = (uint8_t *)malloc(1024);
-    op = (uint8_t *)malloc(1056);
+    buf = (uint8_t *)malloc(2000);
+    op = (uint8_t *)malloc(2000);
     // dump(ip, 16);
     set_time_start();
     ret = FEISTALBOX_wcbc_encrypt(ip, op, 1024, &fb_enc, iv, FEISTALBOX_ENC, WRAP_LEN);
@@ -365,7 +373,7 @@ int wcbc_example(){
     printf("Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     // dump(op, 16);
     set_time_start();
-    ret = FEISTALBOX_wcbc_encrypt(op, buf, 1056, &fb_dec, iv, FEISTALBOX_DEC,WRAP_LEN);
+    ret = FEISTALBOX_wcbc_encrypt(op, buf, 2000, &fb_dec, iv, FEISTALBOX_DEC,WRAP_LEN);
     set_time_ends();
     printf("Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
     ret = memcmp(ip, buf, 1024);
@@ -376,12 +384,155 @@ int wcbc_example(){
     return 0;
  }
 
+int wcbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
+    unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char* op = malloc(size + 16*3);
+    unsigned char* buf = malloc(size);
+    int ret;
+
+    set_time_start();
+    ret = FEISTALBOX_wcbc_encrypt(ip, op, size, fb_enc, iv, FEISTALBOX_ENC, WRAP_LEN);
+    set_time_ends();
+    printf("Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    // dump(op, 16);
+    set_time_start();
+    ret = FEISTALBOX_wcbc_encrypt(op, buf, ret, fb_dec, iv, FEISTALBOX_DEC,WRAP_LEN);
+    set_time_ends();
+    printf("Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    ret = memcmp(ip, buf, size);
+    printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
+    free(op);
+    free(buf);
+}
+
+int cbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
+    unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char* op = malloc(size );
+    unsigned char* buf = malloc(size );
+    int ret;
+
+    set_time_start();
+    ret = FEISTALBOX_cbc_encrypt(ip, op, size , fb_enc, iv, FEISTALBOX_ENC);
+    set_time_ends();
+    printf("Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    // dump(op, 16);
+    set_time_start();
+    ret = FEISTALBOX_cbc_encrypt(op, buf, size , fb_dec, iv2, FEISTALBOX_DEC);
+    set_time_ends();
+    printf("Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    ret = memcmp(ip, buf, size);
+    printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
+    free(op);
+    free(buf);
+}
+
+int wcfb_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
+    unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char* op = malloc(size + 16*3);
+    unsigned char* buf = malloc(size);
+    int ret;
+    int num=0;
+
+    set_time_start();
+    ret = FEISTALBOX_wcfb_encrypt(ip, op, size, fb_enc, &num, iv, FEISTALBOX_ENC);
+    set_time_ends();
+    printf("Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    // dump(op, 16);
+    num = 0;
+    set_time_start();
+    ret = FEISTALBOX_wcfb_encrypt(op, buf, ret, fb_dec, &num, iv2, FEISTALBOX_DEC);
+    set_time_ends();
+    printf("Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    ret = memcmp(ip, buf, size);
+    printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
+    free(op);
+    free(buf);
+}
+
+int cfb_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
+    unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char* op = malloc(size );
+    unsigned char* buf = malloc(size);
+    int ret;
+    int num=0;
+
+    set_time_start();
+    ret = FEISTALBOX_cfb_encrypt(ip, op, size, fb_enc, &num, iv, FEISTALBOX_ENC);
+    set_time_ends();
+    printf("Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    // dump(op, 16);
+    num = 0;
+    set_time_start();
+    ret = FEISTALBOX_cfb_encrypt(op, buf, ret, fb_enc, &num, iv2, FEISTALBOX_DEC);
+    set_time_ends();
+    printf("Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+    ret = memcmp(ip, buf, size);
+    printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
+    free(op);
+    free(buf);
+}
+
+int test_suite(){
+    FILE* f;
+    unsigned char* buf;
+    size_t file_size;
+    f = fopen("E:\\whiteBox\\WhiteboxCipher2\\build\\test1.pdf","rb");
+    file_size = getFileSize(f);
+    buf = malloc(file_size);
+    fread(buf, sizeof(unsigned char), file_size, f);
+
+    int rounds = 10;
+    int ret;
+    const uint8_t key[16] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
+    unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    FeistalBoxConfig cfg;
+    FeistalBox fb_enc, fb_dec;
+    //initFeistalBox(FeistalBox_SM4_128_128, &fb);
+    set_time_start();
+    ret = initFeistalBoxConfig(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
+    set_time_ends();
+    printf("initFeistalBoxConfig Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+
+    set_time_start();
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeEnc, &fb_enc);
+    set_time_ends();
+    printf("generate Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+
+    set_time_start();
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeDec, &fb_dec);
+    set_time_ends();
+    printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+
+    /*
+    printf("\n\nwcbc_test:\n");
+    wcbc_test(&fb_enc, &fb_dec, buf, file_size);
+
+    printf("\n\nwcfb_test:\n");
+    wcfb_test(&fb_enc, &fb_dec, buf, file_size);
+    */
+
+    printf("\n\ncbc_test:\n");
+    cbc_test(&fb_enc, &fb_dec, buf, file_size);
+
+    //printf("\n\ncfb_test:\n");
+    //cfb_test(&fb_enc, &fb_dec, buf, file_size);
+
+    //free(buf);
+
+}
+
 int main(int argv, char **argc) 
 {
+    test_suite();
    // wbc2_example();
    // printf("wcbc test:\n");
    // wcbc_example();
-    cbc_cfb_example();
+   // cbc_cfb_example();
    // printf("wcfb test:\n");
    //wcfb_example();
    // import_test();
