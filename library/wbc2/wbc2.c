@@ -574,8 +574,8 @@ int feistalRoundEnc(const FeistalBox *box, const uint8_t *block_input, uint8_t *
     int _bb = box->blockBytes;
     int _ib = box->inputBytes, _ob = box->outputBytes;
     const uint8_t* _table = box->table;
-    uint8_t * p1 = (uint8_t *)malloc(sizeof(_bb));
-    uint8_t * p2 = (uint8_t *)malloc(sizeof(_bb));
+    uint8_t * p1 = (uint8_t *)malloc(sizeof(uint8_t)*_bb);
+    uint8_t * p2 = (uint8_t *)malloc(sizeof(uint8_t)*_bb);
     if (!p1 || !p2)
         return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
 
@@ -650,8 +650,8 @@ int feistalRoundDec(const FeistalBox *box, const uint8_t *block_input, uint8_t *
     int _bb = box->blockBytes;
     int _ib = box->inputBytes, _ob = box->outputBytes;
     const uint8_t* _table = box->table;
-    uint8_t * p1 = (uint8_t *)malloc(sizeof(_bb));
-    uint8_t * p2 = (uint8_t *)malloc(sizeof(_bb));
+    uint8_t * p1 = (uint8_t *)malloc(sizeof(uint8_t)*_bb);
+    uint8_t * p2 = (uint8_t *)malloc(sizeof(uint8_t)*_bb);
     if (!p1 || !p2)
         return FEISTAL_BOX_MEMORY_NOT_ENOUGH;
 
