@@ -77,7 +77,7 @@ size_t FEISTALBOX_wcfb_encrypt(const unsigned char *in, unsigned char *out,
 
 size_t FEISTALBOX_cbc_encrypt(const unsigned char *in, unsigned char *out,
                      size_t length, const FeistalBox *fb,
-                     unsigned char *ivec, const int enc, uint8_t wrap_flag);
+                     unsigned char *ivec, const int enc);
 
 size_t FEISTALBOX_cfb_encrypt(const unsigned char *in, unsigned char *out,
                      size_t length, const FeistalBox *fb, int* num,
