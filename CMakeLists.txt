@@ -64,9 +64,10 @@ PROJECT(wbc2)
 #3.head file path，头文件目录
 INCLUDE_DIRECTORIES(include)
 INCLUDE_DIRECTORIES(test)
-find_package(JNI REQUIRED)
-include_directories(${JAVA_INCLUDE_PATH})
-include_directories(${JAVA_INCLUDE_PATH2})
+
+# find_package(JNI REQUIRED)
+# include_directories(${JAVA_INCLUDE_PATH})
+# include_directories(${JAVA_INCLUDE_PATH2})
 
 #4.source directory，源文件目录
 AUX_SOURCE_DIRECTORY(library LIB_SRCS)
@@ -78,7 +79,7 @@ AUX_SOURCE_DIRECTORY(library/wbc2 LIB_SRCS)
 AUX_SOURCE_DIRECTORY(library/feistalBox LIB_SRCS)
 
 # jni
-#AUX_SOURCE_DIRECTORY(library/jni LIB_SRCS)
+# AUX_SOURCE_DIRECTORY(library/jni LIB_SRCS)
 
 
 # TEST 
