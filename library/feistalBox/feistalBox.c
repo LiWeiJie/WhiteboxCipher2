@@ -12,7 +12,7 @@ void FEISTALBOX_decrypt(const unsigned char *in, unsigned char *out, const Feist
 
 
 /* allocate memory for store string ,remember to free this one */
-void* FEISTALBOX_export_to_str(const FeistalBox* fb){
+void* FEISTALBOX_export_to_str(const FeistalBox* fb, size_t* sz){
     /* calculate size and allocate memory */
     const uint64_t table_size = fb->tableSize;
     const uint64_t p_size = fb->pSize;
@@ -40,7 +40,7 @@ void* FEISTALBOX_export_to_str(const FeistalBox* fb){
         iter += p_size;
     }
 
-
+    *sz = size;
     return result;
 }
 
