@@ -533,6 +533,36 @@ int test_suite(){
 
 }
 
+int show_box_size(){
+    int ret;
+    const uint8_t key[16] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
+    FeistalBox fb_enc,fb_dec;
+    FeistalBoxConfig cfg;
+    const int rounds = 120;
+    printf("rounds:%d\n",rounds);
+
+    set_time_start();
+    ret = initFeistalBoxConfig(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
+    set_time_ends();
+    printf("initFeistalBoxConfig Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+
+    set_time_start();
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeEnc, &fb_enc);
+    set_time_ends();
+    printf("generate Enc FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
+
+    set_time_start();
+    ret = generateFeistalBox(&cfg, eFeistalBoxModeDec, &fb_dec);
+    set_time_ends();
+
+    printf("enc table_size:%lld\n" , fb_enc.tableSize + fb_enc.pSize);
+    printf("dec table_size:%lld\n" , fb_dec.tableSize + fb_dec.pSize);
+    releaseFeistalBox(&fb_dec);
+    releaseFeistalBox(&fb_enc);
+    return 0;
+
+}
+
 int main(int argv, char **argc) 
 {
     //test_suite();
@@ -542,6 +572,7 @@ int main(int argv, char **argc)
    // cbc_cfb_example();
    // printf("wcfb test:\n");
    //wcfb_example();
-    import_test();
+   //import_test();
+   show_box_size();
     return 0;
 }
