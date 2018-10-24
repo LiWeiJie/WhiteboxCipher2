@@ -88,6 +88,8 @@ int wbc2NoAffine(const uint8_t key[16], const uint8_t ip[16], int rounds)
     FeistalBox fb_enc, fb_dec;
     FeistalBoxConfig cfg;
     int ret;
+    FILE* f1;
+    FILE* f2;
 
     set_time_start();
     ret = initFeistalBoxConfigNoAffine(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
@@ -137,13 +139,13 @@ int wbc2_example()
     const uint8_t key[16] = { 0x12,0x34,0x56,0x78,0x9a,0xbc,0xde,0xf0,0x12,0x34,0x56,0x78,0x9a,0xbc,0xde,0xf0};
     const uint8_t ip[16] = { 0x01,0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
 //    int rounds = 10;
-    wbc2NoAffine(key, ip, 5);
-    wbc2NoAffine(key, ip, 50);
-    wbc2NoAffine(key, ip, 500);
+    //wbc2NoAffine(key, ip, 5);
+    wbc2NoAffine(key, ip, 300);
+    //wbc2NoAffine(key, ip, 500);
     printf("\n");
-    wbc2WithAffine(key, ip, 5);
-    wbc2WithAffine(key, ip, 50);
-    wbc2WithAffine(key, ip, 500);
+    //wbc2WithAffine(key, ip, 5);
+    //wbc2WithAffine(key, ip, 50);
+    //wbc2WithAffine(key, ip, 500);
     printf("\n");
     return 0;
 }
@@ -152,7 +154,7 @@ int import_test()
 {
     const uint8_t key[16] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
     const uint8_t ip[16] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
-    int rounds = 100;
+    int rounds = 300;
     printf("With Affine: %d rounds\n", rounds);
     FeistalBox fb_enc, fb_dec;
     FeistalBoxConfig cfg;
@@ -161,7 +163,7 @@ int import_test()
     size_t size2 = 0;
 
     set_time_start();
-    ret = initFeistalBoxConfig(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
+    ret = initFeistalBoxConfigNoAffine(FeistalBox_SM4_128_128, key, 1, 15, rounds, &cfg);
     set_time_ends();
     printf("initFeistalBoxConfig Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
@@ -384,7 +386,7 @@ int wcbc_example(){
     return 0;
  }
 
-int wcbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
+int wcbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, const size_t size){
     unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     unsigned char* op = malloc(size + 16*3);
@@ -404,6 +406,7 @@ int wcbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, s
     printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
     free(op);
     free(buf);
+    return 0;
 }
 
 int cbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
@@ -426,12 +429,13 @@ int cbc_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, si
     printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
     free(op);
     free(buf);
+    return 0;
 }
 
 int wcfb_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
     unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     unsigned char iv[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    unsigned char* op = malloc(size + 16*3);
+    unsigned char* op = malloc(size + 15*3);
     unsigned char* buf = malloc(size);
     int ret;
     int num=0;
@@ -450,6 +454,7 @@ int wcfb_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, s
     printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
     free(op);
     free(buf);
+    return 0;
 }
 
 int cfb_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, size_t size){
@@ -474,18 +479,20 @@ int cfb_test(FeistalBox* fb_enc, FeistalBox* fb_dec, const unsigned char* ip, si
     printf("DecText ?= Plaintext:\t%s\n", ret == 0 ? "OK" : "NO");
     free(op);
     free(buf);
+    return 0;
 }
 
 int test_suite(){
     FILE* f;
     unsigned char* buf;
     size_t file_size;
-    f = fopen("E:\\whiteBox\\WhiteboxCipher2\\build\\test1.pdf","rb");
+    f = fopen("E:\\whiteBox\\WhiteboxCipher2\\build\\test3","rb");
     file_size = getFileSize(f);
     buf = malloc(file_size);
     fread(buf, sizeof(unsigned char), file_size, f);
 
-    int rounds = 10;
+    int rounds = 500;
+    printf("Rounds:%d\n",rounds);
     int ret;
     const uint8_t key[16] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
     unsigned char iv2[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -508,33 +515,33 @@ int test_suite(){
     set_time_ends();
     printf("generate Dec FeistalBox Spent: %f s, %lld cycles Ret: %d\n", get_clock_elapsed(), get_cycles_elapsed(), ret);
 
-    /*
     printf("\n\nwcbc_test:\n");
     wcbc_test(&fb_enc, &fb_dec, buf, file_size);
 
     printf("\n\nwcfb_test:\n");
     wcfb_test(&fb_enc, &fb_dec, buf, file_size);
-    */
 
-    printf("\n\ncbc_test:\n");
-    cbc_test(&fb_enc, &fb_dec, buf, file_size);
+    printf("\n\ncfb_test:\n");
+    cfb_test(&fb_enc, &fb_dec, buf, file_size);
 
-    //printf("\n\ncfb_test:\n");
-    //cfb_test(&fb_enc, &fb_dec, buf, file_size);
+     printf("\n\ncbc_test:\n");
+     cbc_test(&fb_enc, &fb_dec, buf, file_size);
 
-    //free(buf);
+
+    free(buf);
+    return 0;
 
 }
 
 int main(int argv, char **argc) 
 {
-    test_suite();
+    //test_suite();
    // wbc2_example();
    // printf("wcbc test:\n");
    // wcbc_example();
    // cbc_cfb_example();
    // printf("wcfb test:\n");
    //wcfb_example();
-   // import_test();
+    import_test();
     return 0;
 }
