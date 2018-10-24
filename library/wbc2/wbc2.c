@@ -191,6 +191,8 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
     AffineTransform tata_inv;
     AffineTransform tatb; //temp AffineTransform
     AffineTransform tatb_inv;
+    tata.linear_map = tata.vector_translation = tata_inv.linear_map = tata_inv.vector_translation = 0;
+    tatb.linear_map = tatb.vector_translation = tatb_inv.linear_map = tatb_inv.vector_translation = 0;
     int i,j;
     for (i=0; i<16; i++)
     {
@@ -206,10 +208,7 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
             // assert(AffineMulU8(tata_inv, ph->encode[i][j])==j);
             // ph->encode_inv[i][ ph->encode[i][j] ] = j;
         }
-        AffineTransformRelease(&tata);
-        AffineTransformRelease(&tata_inv);
-        AffineTransformRelease(&tatb);
-        AffineTransformRelease(&tatb_inv);
+        
     }    
 
     int r;
@@ -227,12 +226,13 @@ int initPermutationHelper(int rounds, struct PermutationHelper *ph)
                 ph->alpha_inv[r][i][ ph->alpha[r][i][j] ] = j;
                 ph->alpha_inv2[r][i][ U8MulMat( MatMulU8(tata.linear_map, j), tatb.linear_map) ] = j;
             }
-            AffineTransformRelease(&tata);
-            AffineTransformRelease(&tata_inv);
-            AffineTransformRelease(&tatb);
-            AffineTransformRelease(&tatb_inv);
         }
     }
+
+    AffineTransformRelease(&tata);
+    AffineTransformRelease(&tata_inv);
+    AffineTransformRelease(&tatb);
+    AffineTransformRelease(&tatb_inv);
     
     return ret;
 }
