@@ -12,6 +12,10 @@
 #include "wbc2/wbc2.h"
 #include <AisinoSSL/sm4/sm4.h>
 
+#ifdef __ANDROID__
+    #include <arpa/inet.h>
+#endif
+
 #include "matrixlib/affine_transform.h"
 // #include <AisinoSSL/internal/aisinossl_random.h>
 
