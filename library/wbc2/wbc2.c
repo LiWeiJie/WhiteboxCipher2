@@ -175,7 +175,7 @@ struct PermutationHelper
 };
 
 
-#define RANDOM_AFFINE_MAT(x, xi, d)   GenRandomAffineTransform(x, xi, d)
+#define RANDOM_AFFINE_MAT(x, xi, d)   RandomAffineTransform(x, xi, d)
 
 #include <stdio.h>
 int initPermutationHelper(int rounds, struct PermutationHelper *ph)

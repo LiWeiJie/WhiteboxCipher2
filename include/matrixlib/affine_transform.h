@@ -14,8 +14,10 @@ typedef struct AffineTransform {
     MatGf2 vector_translation;
 } AffineTransform;
 
+int RandomAffineTransform(AffineTransform *at, AffineTransform *at_inv, int dim);
 int GenRandomAffineTransform(AffineTransform *at, AffineTransform *at_inv, int dim);
 
+int IndAffineTransform(AffineTransform *at, AffineTransform *at_inv, int dim);
 int GenIndAffineTransform(AffineTransform *at, AffineTransform *at_inv, int dim);
 
 // left mul at.linear_map * mat
