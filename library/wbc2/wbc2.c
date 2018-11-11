@@ -458,7 +458,9 @@ int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mod
     box->enc_mode = mode;
 
     box->table = NULL;
+    box->tableSize = 0;
     box->p = NULL;
+    box->pSize = 0;
 
     const uint8_t *key = cfg->key;
     int inputBytes = cfg->inputBytes;
