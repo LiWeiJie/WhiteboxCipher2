@@ -462,6 +462,9 @@ int generateFeistalBox(const FeistalBoxConfig *cfg, enum E_FeistalBoxEncMode mod
     box->p = NULL;
     box->pSize = 0;
 
+    memset(box->encode, 0, sizeof(box->encode));
+    memset(box->decode, 0, sizeof(box->decode));
+
     const uint8_t *key = cfg->key;
     int inputBytes = cfg->inputBytes;
     int outputBytes = cfg->outputBytes;
